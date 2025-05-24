@@ -97,14 +97,3 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Proxy and CORS related files (cleanup)
-*proxy*
-*cors*
-*.conf
-run_*.sh
-start_*.sh
-test_*.sh
-CORS_README.md
-
-# Flutter SDK archive
-flutter_*.tar.xz
