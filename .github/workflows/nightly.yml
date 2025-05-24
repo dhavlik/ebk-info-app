@@ -73,7 +73,7 @@ jobs:
       - name: Build all platforms
         run: |
           flutter build apk --release
-          flutter build web --release
+          flutter build web --release --base-href="/ebk-info-app/"
 
       - name: Security audit
         run: dart pub audit
