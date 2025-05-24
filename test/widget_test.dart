@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ebk_app/main.dart';
@@ -18,8 +19,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that key elements are present
-    expect(find.text('EBK App'), findsOneWidget);
-    expect(find.text('Willkommen bei EBK'), findsOneWidget);
+    // Check for the logo image in the app bar
+    expect(find.byType(Image), findsWidgets);
+    
+    // Check for Space Status card (which should be visible)
     expect(find.text('Space Status'), findsOneWidget);
+    
+    // Check for Events section (should be present in localized form)
+    expect(find.byIcon(Icons.event), findsWidgets);
   });
 }

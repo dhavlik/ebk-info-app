@@ -130,7 +130,7 @@ void main() {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
-          'https://eigenbaukombinat.de/status/openuntil.json': openUntilNullResponse,
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json': openUntilNullResponse,
         },
       ));
 
@@ -150,7 +150,7 @@ void main() {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
-          'https://eigenbaukombinat.de/status/openuntil.json': openUntilWithTimeResponse,
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json': openUntilWithTimeResponse,
         },
       ));
 
@@ -190,10 +190,10 @@ void main() {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
-          'https://eigenbaukombinat.de/status/openuntil.json': 'Not Found',
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json': 'Not Found',
         },
         statusCodes: {
-          'https://eigenbaukombinat.de/status/openuntil.json': 404,
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json': 404,
         },
       ));
 
