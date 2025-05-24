@@ -11,13 +11,16 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
 
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
 
     steps:
@@ -34,15 +37,20 @@ jobs:
           fi
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+        run: |
+          gh release create "${{ steps.get_version.outputs.version }}" \
+            --title "Release ${{ steps.get_version.outputs.version }}" \
+            --notes "🎉 Release ${{ steps.get_version.outputs.version }}
+
+          This release includes:
+          - 📱 Android APK
+          - 🌐 Web application
+
+          Download the appropriate package for your platform below." \
+            --draft=false \
+            --prerelease=false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: Release ${{ steps.get_version.outputs.version }}
-          draft: false
-          prerelease: false
 
   build-android:
     name: Build Android Release
@@ -80,14 +88,12 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
+        run: |
+          gh release upload "${{ needs.create-release.outputs.version }}" \
+            build/app/outputs/flutter-apk/app-release.apk \
+            --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: build/app/outputs/flutter-apk/app-release.apk
-          asset_name: ebk-info-app-${{ needs.create-release.outputs.version }}.apk
-          asset_content_type: application/vnd.android.package-archive
 
   build-web:
     name: Build Web Release
@@ -117,11 +123,9 @@ jobs:
           tar -czf web-build.tar.gz web/
 
       - name: Upload Web Build to Release
-        uses: actions/upload-release-asset@v1
+        run: |
+          gh release upload "${{ needs.create-release.outputs.version }}" \
+            build/web-build.tar.gz \
+            --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: build/web-build.tar.gz
-          asset_name: ebk-info-app-web-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_content_type: application/gzip
