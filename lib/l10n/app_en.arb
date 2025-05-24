@@ -1,0 +1,205 @@
+{
+  "@@locale": "en",
+  "appTitle": "ebk info",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Status section title"
+  },
+  "events": "Events",
+  "@events": {
+    "description": "Events section title"
+  },
+  "importantLinks": "Important Links",
+  "@importantLinks": {
+    "description": "Important links section title"
+  },
+  "website": "Website",
+  "@website": {
+    "description": "Website link title"
+  },
+  "contact": "Contact",
+  "@contact": {
+    "description": "Contact link title"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Email link title"
+  },
+  "address": "Address",
+  "@address": {
+    "description": "Address link title"
+  },
+  "officialWebsite": "Official Website",
+  "@officialWebsite": {
+    "description": "Official website description"
+  },
+  "phoneContact": "Phone Contact",
+  "@phoneContact": {
+    "description": "Phone contact description"
+  },
+  "sendEmail": "Send Email",
+  "@sendEmail": {
+    "description": "Send email description"
+  },
+  "officialLinkCollection": "Official Link Collection",
+  "@officialLinkCollection": {
+    "description": "Official link collection title"
+  },
+  "linkCollectionDescription": "Collection of important EBK links",
+  "@linkCollectionDescription": {
+    "description": "Link collection description"
+  },
+  "showLocationInOpenStreetMap": "Show location in OpenStreetMap",
+  "@showLocationInOpenStreetMap": {
+    "description": "Location link description"
+  },
+  "open": "open",
+  "@open": {
+    "description": "Space is open status"
+  },
+  "closed": "closed",
+  "@closed": {
+    "description": "Space is closed status"
+  },
+  "openUntil": "Open until: {time}",
+  "@openUntil": {
+    "description": "Space is open until specific time",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "18:00"
+      }
+    }
+  },
+  "eigenbaukombinat": "Eigenbaukombinat",
+  "@eigenbaukombinat": {
+    "description": "The name of the makerspace"
+  },
+  "salzwedelGermany": "Salzwedel, Germany",
+  "@salzwedelGermany": {
+    "description": "Location of the makerspace"
+  },
+  "showAll": "Show all",
+  "@showAll": {
+    "description": "Button to show all events"
+  },
+  "showLess": "Show less",
+  "@showLess": {
+    "description": "Button to show fewer events"
+  },
+  "couldNotReachCalendarEndpoint": "Could not reach calendar endpoint",
+  "@couldNotReachCalendarEndpoint": {
+    "description": "Error message when calendar API is unreachable"
+  },
+  "refresh": "Refresh",
+  "@refresh": {
+    "description": "Refresh button tooltip"
+  },
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Notifications dialog title"
+  },
+  "notificationsDescription": "Notifications inform you about changes to the EBK status. You can enable or disable them in system settings.",
+  "@notificationsDescription": {
+    "description": "Notifications dialog description"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "OK button text"
+  },
+  "requestPermission": "Request Permission",
+  "@requestPermission": {
+    "description": "Request permission button text"
+  },
+  "ebkStatusChanged": "EBK Status Changed",
+  "@ebkStatusChanged": {
+    "description": "Notification title for status change"
+  },
+  "eigenbaukombinatIsNow": "The Eigenbaukombinat is now {status}",
+  "@eigenbaukombinatIsNow": {
+    "description": "Notification body for status change",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "OPEN"
+      }
+    }
+  },
+  "ebkOpeningTimeChanged": "EBK Opening Time Changed",
+  "@ebkOpeningTimeChanged": {
+    "description": "Notification title for opening time change"
+  },
+  "allDay": "All day",
+  "@allDay": {
+    "description": "Label for all-day events"
+  },
+  "today": "Today",
+  "@today": {
+    "description": "Label for today"
+  },
+  "eventDateTimeFormat": "On {date} from {startTime} to {endTime}",
+  "@eventDateTimeFormat": {
+    "description": "Format for event date and time",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2025-05-24"
+      },
+      "startTime": {
+        "type": "String", 
+        "example": "14:00"
+      },
+      "endTime": {
+        "type": "String",
+        "example": "16:00"
+      }
+    }
+  },
+  "eventTodayTimeFormat": "Today from {startTime} to {endTime}",
+  "@eventTodayTimeFormat": {
+    "description": "Format for today's event time",
+    "placeholders": {
+      "startTime": {
+        "type": "String",
+        "example": "14:00" 
+      },
+      "endTime": {
+        "type": "String",
+        "example": "16:00"
+      }
+    }
+  },
+  "eventDateAllDayFormat": "On {date}",
+  "@eventDateAllDayFormat": {
+    "description": "Format for all-day event date",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2025-05-24"
+      }
+    }
+  },
+  "eventTodayAllDayFormat": "Today",
+  "@eventTodayAllDayFormat": {
+    "description": "Format for today's all-day event"
+  },
+  "addToCalendar": "Add to Calendar",
+  "@addToCalendar": {
+    "description": "Button to add event to user's calendar"
+  },
+  "eventDetails": "Event Details",
+  "@eventDetails": {
+    "description": "Menu item for viewing event details"
+  },
+  "eventAddedToCalendar": "Event downloaded",
+  "@eventAddedToCalendar": {
+    "description": "Success message when event is added to calendar"
+  },
+  "couldNotAddToCalendar": "Could not add to calendar",
+  "@couldNotAddToCalendar": {
+    "description": "Error message when adding to calendar fails"
+  }
+}

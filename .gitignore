@@ -1,0 +1,110 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/build/
+android/build/
+
+# Additional build artifacts and cache files
+*.cache.dill.track.dill
+**/build/reports/
+**/build/intermediates/
+**/build/outputs/
+**/build/tmp/
+**/build/generated/
+**/build/kotlin/
+**/build/kotlinToolingMetadata/
+
+# Flutter build cache
+.flutter-plugins-dependencies
+*.dill
+*.track.dill
+
+# Test coverage
+coverage/
+
+# Local configuration files
+local.properties
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Proxy and CORS related files (cleanup)
+*proxy*
+*cors*
+*.conf
+run_*.sh
+start_*.sh
+test_*.sh
+CORS_README.md
+
+# Flutter SDK archive
+flutter_*.tar.xz

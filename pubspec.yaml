@@ -1,0 +1,37 @@
+name: ebk_app
+description: "Eine Flutter-App für EBK Veranstaltungen und Informationen"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  intl: ^0.20.2
+  url_launcher: ^6.1.12
+  http: ^1.1.0
+  flutter_local_notifications: ^17.2.2
+  permission_handler: ^11.3.1
+  add_2_calendar: ^3.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  mockito: ^5.4.4
+  build_runner: ^2.4.9
+  integration_test:
+    sdk: flutter
+  intl_utils: ^2.8.7
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/images/
