@@ -156,7 +156,7 @@ class ICalService {
       } else {
         // On mobile, check calendar permissions first
         final calendarPermission = await Permission.calendar.status;
-        
+
         if (calendarPermission.isDenied) {
           // Request calendar permission
           final permissionResult = await Permission.calendar.request();
@@ -172,7 +172,8 @@ class ICalService {
         // Use add_2_calendar for native calendar integration
         final calendarEvent = calendar.Event(
           title: event.title,
-          description: event.description.isNotEmpty ? event.description : event.title,
+          description:
+              event.description.isNotEmpty ? event.description : event.title,
           location: event.location,
           startDate: event.date,
           endDate: event.endTime ?? event.date.add(const Duration(hours: 1)),
@@ -186,11 +187,11 @@ class ICalService {
         }
 
         final result = await calendar.Add2Calendar.addEvent2Cal(calendarEvent);
-        
+
         if (kDebugMode) {
           print('📅 Calendar integration result: $result');
         }
-        
+
         if (result) {
           return true;
         } else {
@@ -202,7 +203,7 @@ class ICalService {
       if (kDebugMode) {
         print('📅 Calendar integration failed: $e');
       }
-      
+
       // Try fallback method
       return await _fallbackCalendarMethod(event);
     }
@@ -214,18 +215,19 @@ class ICalService {
       if (kDebugMode) {
         print('📅 Attempting fallback: iCal file download');
       }
-      
+
       final icalContent = generateICalForEvent(event);
-      
+
       // Create data URL for iCal file
-      final dataUrl = 'data:text/calendar;charset=utf-8,${Uri.encodeComponent(icalContent)}';
-      
+      final dataUrl =
+          'data:text/calendar;charset=utf-8,${Uri.encodeComponent(icalContent)}';
+
       // Try to launch the data URL
       final uri = Uri.parse(dataUrl);
       if (await canLaunchUrl(uri)) {
         return await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-      
+
       // If data URL fails, try intent-based approach on Android
       return await _tryIntentBasedCalendar(event);
     } catch (e) {
@@ -242,11 +244,13 @@ class ICalService {
       if (kDebugMode) {
         print('📅 Attempting intent-based calendar integration');
       }
-      
+
       // Create calendar intent URL
       final startTime = event.date.millisecondsSinceEpoch;
-      final endTime = (event.endTime ?? event.date.add(const Duration(hours: 1))).millisecondsSinceEpoch;
-      
+      final endTime =
+          (event.endTime ?? event.date.add(const Duration(hours: 1)))
+              .millisecondsSinceEpoch;
+
       final intentUrl = 'content://com.android.calendar/events'
           '?title=${Uri.encodeComponent(event.title)}'
           '&description=${Uri.encodeComponent(event.description)}'
@@ -254,12 +258,12 @@ class ICalService {
           '&beginTime=$startTime'
           '&endTime=$endTime'
           '&allDay=${event.isAllDay ? 1 : 0}';
-      
+
       final uri = Uri.parse(intentUrl);
       if (await canLaunchUrl(uri)) {
         return await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-      
+
       return false;
     } catch (e) {
       if (kDebugMode) {

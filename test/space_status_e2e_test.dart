@@ -87,12 +87,14 @@ void main() {
     }
     ''';
 
-    Widget createTestApp({required Map<String, String> mockResponses, Map<String, int>? statusCodes}) {
+    Widget createTestApp(
+        {required Map<String, String> mockResponses,
+        Map<String, int>? statusCodes}) {
       final mockClient = MockHttpClient(
         responses: mockResponses,
         statusCodes: statusCodes ?? {},
       );
-      
+
       return MaterialApp(
         home: Scaffold(
           body: TestSpaceStatusCard(client: mockClient),
@@ -100,7 +102,8 @@ void main() {
       );
     }
 
-    testWidgets('displays "Closed" when space is closed', (WidgetTester tester) async {
+    testWidgets('displays "Closed" when space is closed',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': closedSpaceResponse,
@@ -109,7 +112,7 @@ void main() {
 
       // Wait for the initial loading
       await tester.pump();
-      
+
       // Wait for HTTP request completion
       await tester.pumpAndSettle();
 
@@ -117,20 +120,24 @@ void main() {
       expect(find.text('Space Status'), findsOneWidget);
       expect(find.text('Closed'), findsOneWidget);
       expect(find.byIcon(Icons.lock), findsOneWidget);
-      
+
       // Verify space info is displayed
       expect(find.text('Eigenbaukombinat Halle'), findsOneWidget);
-      expect(find.text('Landsberger Str. 3, 06112 Halle (Saale), Germany'), findsOneWidget);
-      
+      expect(find.text('Landsberger Str. 3, 06112 Halle (Saale), Germany'),
+          findsOneWidget);
+
       // Verify no "open until" text is shown
       expect(find.textContaining('Open until'), findsNothing);
     });
 
-    testWidgets('displays "Open" when space is open but no close time available', (WidgetTester tester) async {
+    testWidgets(
+        'displays "Open" when space is open but no close time available',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
-          'https://spaceapi.eigenbaukombinat.de/openuntil.json': openUntilNullResponse,
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json':
+              openUntilNullResponse,
         },
       ));
 
@@ -141,16 +148,18 @@ void main() {
       // Verify open status is displayed
       expect(find.text('Open'), findsOneWidget);
       expect(find.byIcon(Icons.lock_open), findsOneWidget);
-      
+
       // Verify no "open until" text is shown when close time is null
       expect(find.textContaining('Open until'), findsNothing);
     });
 
-    testWidgets('displays "Open until X:XX" when space is open with close time', (WidgetTester tester) async {
+    testWidgets('displays "Open until X:XX" when space is open with close time',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
-          'https://spaceapi.eigenbaukombinat.de/openuntil.json': openUntilWithTimeResponse,
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json':
+              openUntilWithTimeResponse,
         },
       ));
 
@@ -161,7 +170,7 @@ void main() {
       // Verify open status is displayed
       expect(find.text('Open'), findsOneWidget);
       expect(find.byIcon(Icons.lock_open), findsOneWidget);
-      
+
       // Verify "open until" text is shown with the time
       expect(find.text('Open until 18:30'), findsOneWidget);
       expect(find.byIcon(Icons.schedule), findsOneWidget);
@@ -186,7 +195,8 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
-    testWidgets('handles openuntil API failure gracefully when space is open', (WidgetTester tester) async {
+    testWidgets('handles openuntil API failure gracefully when space is open',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
           'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
@@ -204,10 +214,10 @@ void main() {
       // Verify open status is still displayed (main API worked)
       expect(find.text('Open'), findsOneWidget);
       expect(find.byIcon(Icons.lock_open), findsOneWidget);
-      
+
       // Verify no "open until" text is shown (openuntil API failed)
       expect(find.textContaining('Open until'), findsNothing);
-      
+
       // Verify no error is shown (openuntil failure should be silent)
       expect(find.byIcon(Icons.error_outline), findsNothing);
     });
@@ -240,15 +250,15 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
   Future<void> _loadSpaceData() async {
     // Create a service with our test client
     final testService = SpaceApiService(client: widget.client);
-    
+
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
-      
+
       final data = await testService.getSpaceStatus();
-      
+
       // If space is open, also fetch the open until data
       space_api.OpenUntilResponse? openUntilData;
       if (data.state.open) {
@@ -259,7 +269,7 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
           print('Failed to fetch open until data: $e');
         }
       }
-      
+
       setState(() {
         _spaceData = data;
         _openUntilData = openUntilData;
@@ -289,8 +299,8 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
                 Text(
                   'Space Status',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 IconButton(
                   onPressed: _isLoading ? null : _loadSpaceData,
@@ -454,7 +464,7 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
     );
     final now = DateTime.now();
     final difference = now.difference(lastUpdate);
-    
+
     String timeAgo;
     if (difference.inMinutes < 60) {
       timeAgo = '${difference.inMinutes}m ago';

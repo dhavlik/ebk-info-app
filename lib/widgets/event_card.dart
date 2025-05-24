@@ -184,26 +184,26 @@ class EventCard extends StatelessWidget {
       if (kDebugMode) {
         print('🔗 Attempting to launch URL: $url');
       }
-      
+
       // Ensure URL has proper scheme
       String processedUrl = url;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         processedUrl = 'https://$url';
       }
-      
+
       final uri = Uri.parse(processedUrl);
-      
+
       if (kDebugMode) {
         print('🔗 Processed URL: $processedUrl');
       }
-      
+
       if (await canLaunchUrl(uri)) {
         final launched = await launchUrl(
-          uri, 
+          uri,
           mode: LaunchMode.externalApplication,
           webOnlyWindowName: '_blank',
         );
-        
+
         if (kDebugMode) {
           print('🔗 URL launch result: $launched');
         }
@@ -211,7 +211,7 @@ class EventCard extends StatelessWidget {
         if (kDebugMode) {
           print('🔗 Cannot launch URL: $processedUrl');
         }
-        
+
         // Try alternative launch mode
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
@@ -219,7 +219,7 @@ class EventCard extends StatelessWidget {
       if (kDebugMode) {
         print('🔗 URL launch error: $e');
       }
-      
+
       // Show error to user in debug mode
       if (kDebugMode) {
         rethrow;
@@ -285,7 +285,8 @@ class EventCard extends StatelessWidget {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.white, size: 16),
+                  const Icon(Icons.error_outline,
+                      color: Colors.white, size: 16),
                   const SizedBox(width: 8),
                   Expanded(child: Text(l10n.couldNotAddToCalendar)),
                 ],
@@ -305,7 +306,7 @@ class EventCard extends StatelessWidget {
       if (kDebugMode) {
         print('📅 Calendar integration error: $e');
       }
-      
+
       // Show error message
       if (context.mounted) {
         final l10n = AppLocalizations.of(context)!;

@@ -21,10 +21,10 @@ void main() {
     // Verify that key elements are present
     // Check for the logo image in the app bar
     expect(find.byType(Image), findsWidgets);
-    
+
     // Check for Space Status card (which should be visible)
     expect(find.text('Space Status'), findsOneWidget);
-    
+
     // Check for Events section (should be present in localized form)
     expect(find.byIcon(Icons.event), findsWidgets);
   });
