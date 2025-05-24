@@ -1,0 +1,110 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:ebk_app/screens/home_screen.dart';
+import 'package:ebk_app/l10n/app_localizations.dart';
+
+// Integration-style widget tests (safer than integration_test package)
+void main() {
+  group('App Integration Widget Tests', () {
+    // Test app widget without permissions
+    Widget createTestApp() {
+      return MaterialApp(
+        title: 'EBK App Test',
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('de'),
+        ],
+        home: const HomeScreen(),
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+          useMaterial3: true,
+        ),
+      );
+    }
+
+    testWidgets('App should build and display main components', (tester) async {
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Check that the app builds successfully
+      expect(find.byType(MaterialApp), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
+
+      // Check for main UI components
+      expect(find.text('Status'), findsOneWidget);
+      expect(find.text('Kommende Veranstaltungen'), findsOneWidget);
+      expect(find.text('Eigenbaukombinat'), findsOneWidget);
+    });
+
+    testWidgets('Status card should show loading or content', (tester) async {
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Status section should be present
+      expect(find.text('Status'), findsOneWidget);
+
+      // Should show either loading indicator or status content
+      final hasLoading =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasOpenText = find.text('OFFEN').evaluate().isNotEmpty;
+      final hasClosedText = find.text('GESCHLOSSEN').evaluate().isNotEmpty;
+
+      // At least one should be true
+      expect(hasLoading || hasOpenText || hasClosedText, isTrue);
+    });
+
+    testWidgets('Events section should be present', (tester) async {
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Events section should be visible
+      expect(find.text('Kommende Veranstaltungen'), findsOneWidget);
+
+      // Should show either loading, events, or error state
+      final hasLoading =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasCards = find.byType(Card).evaluate().isNotEmpty;
+      final hasError =
+          find.textContaining('Could not reach').evaluate().isNotEmpty;
+
+      // At least one should be true
+      expect(hasLoading || hasCards || hasError, isTrue);
+    });
+
+    testWidgets('App bar should be present with proper structure',
+        (tester) async {
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      // App bar should exist
+      expect(find.byType(AppBar), findsOneWidget);
+
+      // Should have a title or some content
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(appBar, isNotNull);
+    });
+
+    testWidgets('Refresh functionality should be available', (tester) async {
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle(const Duration(seconds: 3));
+
+      // Look for refresh button
+      final refreshButton = find.byIcon(Icons.refresh);
+      if (refreshButton.evaluate().isNotEmpty) {
+        expect(refreshButton, findsOneWidget);
+
+        // Test that tapping doesn't crash
+        await tester.tap(refreshButton);
+        await tester.pump();
+      }
+      // If no refresh button, that's also acceptable
+    });
+  });
+}

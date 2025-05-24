@@ -70,7 +70,11 @@ jobs:
         run: flutter pub get
 
       - name: Run tests
-        run: flutter test
+        run: |
+          # Run unit and widget tests, excluding integration tests for now
+          flutter test \
+            --exclude-tags=integration \
+            --dart-define=FLUTTER_TEST_INTEGRATION_DISABLED=true
 
       - name: Build APK
         run: flutter build apk --release

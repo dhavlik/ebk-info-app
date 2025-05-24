@@ -44,6 +44,7 @@ void main() {
         if (find.text('Kommende Veranstaltungen').evaluate().isNotEmpty) {
           expect(find.text('Kommende Veranstaltungen'), findsOneWidget);
         }
+
       } catch (e) {
         debugPrint('UI test failed (possibly due to permissions): $e');
         // Mark as success since permission issues are expected

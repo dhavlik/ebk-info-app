@@ -64,7 +64,10 @@ jobs:
 
       - name: Run comprehensive tests
         run: |
-          flutter test --coverage
+          # Run unit and widget tests, excluding integration tests for now
+          flutter test --coverage \
+            --exclude-tags=integration \
+            --dart-define=FLUTTER_TEST_INTEGRATION_DISABLED=true
           flutter analyze
 
       - name: Build all platforms

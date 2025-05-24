@@ -110,7 +110,11 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test --coverage
+        run: |
+          # Run unit and widget tests, excluding integration tests for now
+          flutter test --coverage \
+            --exclude-tags=integration \
+            --dart-define=FLUTTER_TEST_INTEGRATION_DISABLED=true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

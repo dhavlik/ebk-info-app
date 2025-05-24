@@ -1,0 +1,52 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ebk_app/services/background_polling_service.dart';
+
+void main() {
+  group('Background Polling Service Unit Tests', () {
+    setUp(() {
+      // Clean state before each test
+      BackgroundPollingService.stopPolling();
+    });
+
+    tearDown(() {
+      // Clean up after each test
+      BackgroundPollingService.stopPolling();
+    });
+
+    test('should start and stop polling correctly', () {
+      // Initial state
+      expect(BackgroundPollingService.isRunning, isFalse);
+
+      // Start polling
+      BackgroundPollingService.startPolling();
+      expect(BackgroundPollingService.isRunning, isTrue);
+
+      // Stop polling
+      BackgroundPollingService.stopPolling();
+      expect(BackgroundPollingService.isRunning, isFalse);
+    });
+
+    test('should not allow double start', () {
+      // Start polling
+      BackgroundPollingService.startPolling();
+      expect(BackgroundPollingService.isRunning, isTrue);
+
+      // Try to start again
+      BackgroundPollingService.startPolling();
+      expect(BackgroundPollingService.isRunning, isTrue); // Should still be true
+
+      // Stop
+      BackgroundPollingService.stopPolling();
+      expect(BackgroundPollingService.isRunning, isFalse);
+    });
+
+    test('should handle stop when not running', () {
+      // Ensure not running
+      expect(BackgroundPollingService.isRunning, isFalse);
+
+      // Stop when not running should not crash
+      expect(() => BackgroundPollingService.stopPolling(), returnsNormally);
+      expect(BackgroundPollingService.isRunning, isFalse);
+    });
+  });
+}

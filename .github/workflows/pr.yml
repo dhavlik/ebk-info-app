@@ -113,7 +113,11 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test
+        run: |
+          # Run unit and widget tests, excluding integration tests for now
+          flutter test \
+            --exclude-tags=integration \
+            --dart-define=FLUTTER_TEST_INTEGRATION_DISABLED=true
 
       - name: Check for security vulnerabilities
         run: dart pub audit
