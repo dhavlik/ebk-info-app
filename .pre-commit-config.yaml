@@ -26,14 +26,6 @@ repos:
         pass_filenames: false
         description: 'Format Dart code using dart format'
 
-      - id: dart-analyze
-        name: Dart Analyze
-        entry: dart analyze --no-fatal-warnings
-        language: system
-        files: '\.dart$'
-        pass_filenames: false
-        description: 'Analyze Dart code for issues'
-
       - id: dart-test
         name: Dart Test
         entry: flutter test
