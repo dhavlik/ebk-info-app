@@ -13,6 +13,10 @@ jobs:
   test:
     name: Test & Analyze
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      checks: write
 
     steps:
       - name: Checkout code
@@ -37,22 +41,70 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Apply dart format and commit fixes
+      - name: Check and apply dart format
+        id: format-check
         run: |
           # Apply dart format
           dart format .
 
           # Check if there are any changes
           if ! git diff --quiet; then
-            echo "🔧 Formatting changes detected, committing fixes..."
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add .
-            git commit -m "🎨 Auto-fix: Apply dart format [skip ci]"
-            git push
+            echo "🔧 Formatting changes detected"
+            echo "needs_formatting=true" >> $GITHUB_OUTPUT
+
+            # If this is the main branch, try to auto-commit
+            if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
+              echo "📝 Attempting to commit formatting fixes to main branch..."
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add .
+              git commit -m "🎨 Auto-fix: Apply dart format [skip ci]"
+
+              # Try to push, but don't fail if it doesn't work
+              if git push; then
+                echo "✅ Successfully committed formatting fixes"
+                echo "committed=true" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ Could not push directly, will create PR instead"
+                echo "committed=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "📋 Not main branch or not a push event, skipping auto-commit"
+              echo "committed=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "✅ No formatting changes needed"
+            echo "needs_formatting=false" >> $GITHUB_OUTPUT
+            echo "committed=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Create PR for formatting fixes
+        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "🎨 Auto-fix: Apply dart format"
+          title: "🎨 Automated Code Formatting"
+          body: |
+            ## Automated Code Formatting
+
+            This PR applies `dart format` to ensure consistent code style.
+
+            **Changes:**
+            - Applied automatic dart formatting
+            - No functional changes to the code
+
+            **Note:** This PR was created automatically by GitHub Actions.
+          branch: automated-formatting-${{ github.run_number }}
+          delete-branch: true
+
+      - name: Fail if formatting needed but couldn't be applied
+        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
+        run: |
+          echo "❌ Code formatting is required but couldn't be auto-committed."
+          echo "📋 A pull request has been created with the necessary formatting changes."
+          echo "🔗 Please review and merge the automated formatting PR."
+          exit 1
 
       - name: Analyze project source
         run: flutter analyze --fatal-infos

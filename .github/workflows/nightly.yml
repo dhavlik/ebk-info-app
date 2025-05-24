@@ -9,6 +9,10 @@ jobs:
   nightly-build:
     name: Nightly Build & Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      checks: write
 
     steps:
       - name: Checkout code
@@ -40,15 +44,23 @@ jobs:
 
           # Check if there are any changes
           if ! git diff --quiet; then
-            echo "🔧 Formatting changes detected, committing fixes..."
+            echo "🔧 Formatting changes detected, attempting to commit..."
             git config --local user.email "nightly@github.com"
             git config --local user.name "Nightly Build Bot"
             git add .
             git commit -m "🎨 Nightly auto-fix: Apply dart format [skip ci]"
-            git push
+
+            # Try to push, but continue if it fails
+            if git push; then
+              echo "✅ Successfully committed formatting fixes"
+            else
+              echo "⚠️ Could not push formatting fixes (likely due to branch protection)"
+              echo "🔄 Continuing with nightly build..."
+            fi
           else
             echo "✅ No formatting changes needed"
           fi
+        continue-on-error: true
 
       - name: Run comprehensive tests
         run: |
