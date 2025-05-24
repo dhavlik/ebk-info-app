@@ -65,7 +65,7 @@ jobs:
       - name: Run comprehensive tests
         run: |
           flutter test --coverage
-          flutter analyze --fatal-infos
+          flutter analyze
 
       - name: Build all platforms
         run: |

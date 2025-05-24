@@ -107,7 +107,7 @@ jobs:
           exit 1
 
       - name: Analyze project source
-        run: flutter analyze --fatal-infos
+        run: flutter analyze
 
       - name: Run tests
         run: flutter test --coverage

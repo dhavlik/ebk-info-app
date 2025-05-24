@@ -235,7 +235,6 @@ class TestSpaceStatusCard extends StatefulWidget {
 }
 
 class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
-  final SpaceApiService _spaceApiService = SpaceApiService();
   space_api.SpaceApiResponse? _spaceData;
   space_api.OpenUntilResponse? _openUntilData;
   bool _isLoading = true;
