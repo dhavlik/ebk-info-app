@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -30,11 +33,27 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Apply dart format and commit fixes
+        run: |
+          # Apply dart format
+          dart format .
+
+          # Check if there are any changes
+          if ! git diff --quiet; then
+            echo "🔧 Formatting changes detected, committing fixes..."
+            git config --local user.email "nightly@github.com"
+            git config --local user.name "Nightly Build Bot"
+            git add .
+            git commit -m "🎨 Nightly auto-fix: Apply dart format [skip ci]"
+            git push
+          else
+            echo "✅ No formatting changes needed"
+          fi
+
       - name: Run comprehensive tests
         run: |
           flutter test --coverage
           flutter analyze --fatal-infos
-          dart format --output=none --set-exit-if-changed .
 
       - name: Build all platforms
         run: |

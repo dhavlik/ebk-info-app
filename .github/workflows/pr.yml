@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -31,8 +34,75 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+      - name: Check formatting and suggest fixes
+        id: format-check
+        run: |
+          # Check current formatting
+          if ! dart format --output=none --set-exit-if-changed .; then
+            echo "needs_formatting=true" >> $GITHUB_OUTPUT
+            echo "🔧 Formatting issues detected. Generating diff..."
+
+            # Generate formatting diff
+            dart format . > /dev/null
+            git diff > format.diff
+
+            if [ -s format.diff ]; then
+              echo "Format diff generated"
+              echo "diff_available=true" >> $GITHUB_OUTPUT
+            else
+              echo "No diff generated"
+              echo "diff_available=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ Code is properly formatted"
+            echo "needs_formatting=false" >> $GITHUB_OUTPUT
+            echo "diff_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment PR with formatting suggestions
+        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.diff_available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const diff = fs.readFileSync('format.diff', 'utf8');
+
+              if (diff.trim()) {
+                const comment = `## 🎨 Code Formatting Suggestions
+
+            Your code needs some formatting adjustments. Here's what \`dart format\` would change:
+
+            \`\`\`diff
+            ${diff}
+            \`\`\`
+
+            **To fix these issues:**
+            1. Run \`dart format .\` in your local repository
+            2. Commit and push the changes
+
+            Or use the pre-commit hooks to automatically format on commit:
+            \`\`\`bash
+            ./scripts/setup-precommit.sh
+            \`\`\``;
+
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Could not read diff file or diff is empty');
+            }
+
+      - name: Fail if formatting is needed
+        if: steps.format-check.outputs.needs_formatting == 'true'
+        run: |
+          echo "❌ Code formatting is required. Please run 'dart format .' and commit the changes."
+          exit 1
 
       - name: Analyze project source
         run: flutter analyze --fatal-infos

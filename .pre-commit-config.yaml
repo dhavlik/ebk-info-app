@@ -1,6 +1,9 @@
 # Pre-commit hooks for Flutter/Dart project
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+#
+# Note: CI/CD pipelines will automatically apply dart format fixes and commit them
+# for main branch pushes, while PR builds will suggest formatting fixes in comments.
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
