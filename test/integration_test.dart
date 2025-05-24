@@ -16,22 +16,23 @@ void main() {
 
       // Überprüfen dass die App geladen ist
       expect(find.text('EBK App'), findsOneWidget);
-      
+
       // Überprüfen dass Background-Polling läuft
       expect(BackgroundPollingService.isRunning, true);
     });
 
-    testWidgets('Refresh-Button sollte manuellen Status-Check auslösen', (tester) async {
+    testWidgets('Refresh-Button sollte manuellen Status-Check auslösen',
+        (tester) async {
       app.main();
       await tester.pumpAndSettle();
 
       // Refresh-Button finden und antippen
       final refreshButton = find.byIcon(Icons.refresh);
       expect(refreshButton, findsOneWidget);
-      
+
       await tester.tap(refreshButton);
       await tester.pump();
-      
+
       // Kurz warten für die Netzwerk-Anfrage
       await tester.pump(const Duration(milliseconds: 100));
     });
@@ -48,20 +49,21 @@ void main() {
         notificationIcon = find.byIcon(Icons.notifications_off);
       }
       expect(notificationIcon, findsOneWidget);
-      
+
       await tester.tap(notificationIcon);
       await tester.pumpAndSettle();
-      
+
       // Dialog sollte erscheinen
       expect(find.text('Benachrichtigungen'), findsOneWidget);
       expect(find.text('OK'), findsOneWidget);
-      
+
       // Dialog schließen
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
     });
 
-    testWidgets('Status-Indikatoren sollten in AppBar sichtbar sein', (tester) async {
+    testWidgets('Status-Indikatoren sollten in AppBar sichtbar sein',
+        (tester) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -96,7 +98,7 @@ void main() {
       // SpaceStatusCard sollte sichtbar sein
       expect(find.text('Status'), findsOneWidget);
       expect(find.text('Eigenbaukombinat'), findsOneWidget);
-      
+
       // Status sollte entweder "OFFEN" oder "GESCHLOSSEN" sein
       final openText = find.text('OFFEN');
       final closedText = find.text('GESCHLOSSEN');
@@ -117,17 +119,21 @@ void main() {
 
       // Events-Bereich sollte sichtbar sein
       expect(find.text('Kommende Veranstaltungen'), findsOneWidget);
-      
+
       // Entweder echte Events oder Sample Events sollten sichtbar sein
       // Wenn API nicht erreichbar, sollte Fehlermeldung erscheinen
       final errorMessage = find.text('Could not reach calendar endpoint');
       final eventsFound = find.byType(Card);
-      
+
       // Entweder Events oder Error-Message sollte da sein
-      expect(eventsFound.evaluate().isNotEmpty || errorMessage.evaluate().isNotEmpty, true);
+      expect(
+          eventsFound.evaluate().isNotEmpty ||
+              errorMessage.evaluate().isNotEmpty,
+          true);
     });
 
-    testWidgets('Show All/Show Less Toggle sollte funktionieren', (tester) async {
+    testWidgets('Show All/Show Less Toggle sollte funktionieren',
+        (tester) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -139,14 +145,14 @@ void main() {
       if (showAllButton.evaluate().isNotEmpty) {
         await tester.tap(showAllButton);
         await tester.pumpAndSettle();
-        
+
         // Nach dem Tap sollte "Weniger anzeigen" sichtbar sein
         expect(find.text('Weniger anzeigen'), findsOneWidget);
-        
+
         // Zurück zu "Weniger anzeigen"
         await tester.tap(find.text('Weniger anzeigen'));
         await tester.pumpAndSettle();
-        
+
         // Wieder "Alle anzeigen" sollte sichtbar sein
         expect(find.text('Alle anzeigen'), findsOneWidget);
       }

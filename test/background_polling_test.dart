@@ -18,20 +18,20 @@ void main() {
 
     test('sollte Polling starten und stoppen können', () {
       expect(BackgroundPollingService.isRunning, false);
-      
+
       BackgroundPollingService.startPolling();
       expect(BackgroundPollingService.isRunning, true);
-      
+
       BackgroundPollingService.stopPolling();
       expect(BackgroundPollingService.isRunning, false);
     });
 
     test('sollte doppelten Start verhindern', () {
       expect(BackgroundPollingService.isRunning, false);
-      
+
       BackgroundPollingService.startPolling();
       expect(BackgroundPollingService.isRunning, true);
-      
+
       // Zweiter Start sollte keinen Effekt haben
       BackgroundPollingService.startPolling();
       expect(BackgroundPollingService.isRunning, true);
@@ -40,7 +40,7 @@ void main() {
     test('sollte Reset-Funktion korrekt arbeiten', () {
       BackgroundPollingService.startPolling();
       expect(BackgroundPollingService.isRunning, true);
-      
+
       BackgroundPollingService.reset();
       expect(BackgroundPollingService.isRunning, false);
     });
@@ -48,7 +48,8 @@ void main() {
     test('sollte manuellen Status-Check durchführen können', () async {
       // Manuellen Check ausführen (ohne Polling zu starten)
       // Das wird versuchen, die echte API zu erreichen, sollte aber nicht fehlschlagen
-      expect(() async => await BackgroundPollingService.checkNow(), returnsNormally);
+      expect(() async => await BackgroundPollingService.checkNow(),
+          returnsNormally);
     });
   });
 

@@ -2,7 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
   static Future<void> initialize() async {
@@ -12,8 +13,9 @@ class NotificationService {
     await Permission.notification.request();
 
     // Android-Einstellungen
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
     // iOS-Einstellungen
     const iosSettings = DarwinInitializationSettings(
       requestSoundPermission: true,

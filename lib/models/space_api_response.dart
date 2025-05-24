@@ -20,8 +20,10 @@ class SpaceApiResponse {
       space: json['space'] ?? '',
       logo: json['logo'],
       url: json['url'],
-      location: json['location'] != null ? Location.fromJson(json['location']) : null,
-      contact: json['contact'] != null ? Contact.fromJson(json['contact']) : null,
+      location:
+          json['location'] != null ? Location.fromJson(json['location']) : null,
+      contact:
+          json['contact'] != null ? Contact.fromJson(json['contact']) : null,
       state: State.fromJson(json['state']),
     );
   }

@@ -27,7 +27,7 @@ class _OpeningHoursCardState extends State<OpeningHoursCard> {
         _isLoading = true;
         _error = null;
       });
-      
+
       final data = await _statusService.getSpaceStatus();
       setState(() {
         _spaceData = data;
@@ -61,8 +61,8 @@ class _OpeningHoursCardState extends State<OpeningHoursCard> {
                 Text(
                   'Status',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 IconButton(
                   onPressed: _isLoading ? null : _refreshData,
@@ -201,7 +201,8 @@ class _OpeningHoursCardState extends State<OpeningHoursCard> {
     final lastUpdate = DateTime.fromMillisecondsSinceEpoch(
       _spaceData!.state.lastchange! * 1000,
     );
-    final formattedTime = '${lastUpdate.day}.${lastUpdate.month}.${lastUpdate.year} ${lastUpdate.hour.toString().padLeft(2, '0')}:${lastUpdate.minute.toString().padLeft(2, '0')}';
+    final formattedTime =
+        '${lastUpdate.day}.${lastUpdate.month}.${lastUpdate.year} ${lastUpdate.hour.toString().padLeft(2, '0')}:${lastUpdate.minute.toString().padLeft(2, '0')}';
 
     return Row(
       children: [

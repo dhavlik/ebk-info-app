@@ -4,12 +4,12 @@ import '../models/space_api_response.dart';
 
 class SpaceApiService {
   static const String _apiUrl = 'https://spaceapi.eigenbaukombinat.de/';
-  static const String _openUntilUrl = 'https://spaceapi.eigenbaukombinat.de/openuntil.json';
-  
+  static const String _openUntilUrl =
+      'https://spaceapi.eigenbaukombinat.de/openuntil.json';
+
   final http.Client _client;
 
-  SpaceApiService({http.Client? client}) 
-      : _client = client ?? http.Client();
+  SpaceApiService({http.Client? client}) : _client = client ?? http.Client();
 
   Future<SpaceApiResponse> getSpaceStatus() async {
     try {
@@ -46,7 +46,8 @@ class SpaceApiService {
         final Map<String, dynamic> data = json.decode(response.body);
         return OpenUntilResponse.fromJson(data);
       } else {
-        throw Exception('Failed to load open until data: ${response.statusCode}');
+        throw Exception(
+            'Failed to load open until data: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error fetching open until data: $e');
