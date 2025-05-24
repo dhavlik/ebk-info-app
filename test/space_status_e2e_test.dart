@@ -265,7 +265,7 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
           openUntilData = await testService.getOpenUntil();
         } catch (e) {
           // Don't fail the whole request if openuntil fails
-          print('Failed to fetch open until data: $e');
+          debugPrint('Failed to fetch open until data: $e');
         }
       }
 

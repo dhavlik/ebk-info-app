@@ -77,40 +77,40 @@ class ICalService {
 
     // Event
     buffer.write('BEGIN:VEVENT\r\n');
-    buffer.write(foldLine('UID:$uid') + '\r\n');
-    buffer.write(foldLine('DTSTAMP:${formatDateTime(now)}') + '\r\n');
+    buffer.write('${foldLine('UID:$uid')}\r\n');
+    buffer.write('${foldLine('DTSTAMP:${formatDateTime(now)}')}\r\n');
 
     if (event.isAllDay) {
       buffer.write(
-          foldLine('DTSTART;VALUE=DATE:${formatDate(event.date)}') + '\r\n');
+          '${foldLine('DTSTART;VALUE=DATE:${formatDate(event.date)}')}\r\n');
       if (event.endTime != null) {
         // For all-day events, end date is exclusive, so add 1 day
         final endDate = event.endTime!.add(const Duration(days: 1));
         buffer.write(
-            foldLine('DTEND;VALUE=DATE:${formatDate(endDate)}') + '\r\n');
+            '${foldLine('DTEND;VALUE=DATE:${formatDate(endDate)}')}\r\n');
       } else {
         // Default to 1-day event
         final endDate = event.date.add(const Duration(days: 1));
         buffer.write(
-            foldLine('DTEND;VALUE=DATE:${formatDate(endDate)}') + '\r\n');
+            '${foldLine('DTEND;VALUE=DATE:${formatDate(endDate)}')}\r\n');
       }
     } else {
       buffer
-          .write(foldLine('DTSTART:${formatDateTime(startDateTime)}') + '\r\n');
-      buffer.write(foldLine('DTEND:${formatDateTime(endDateTime)}') + '\r\n');
+          .write('${foldLine('DTSTART:${formatDateTime(startDateTime)}')}\r\n');
+      buffer.write('${foldLine('DTEND:${formatDateTime(endDateTime)}')}\r\n');
     }
 
-    buffer.write(foldLine('SUMMARY:${escapeText(event.title)}') + '\r\n');
+    buffer.write('${foldLine('SUMMARY:${escapeText(event.title)}')}\r\n');
 
     // Always include description field, even if empty
     final description =
         event.description.isNotEmpty ? escapeText(event.description) : '';
-    buffer.write(foldLine('DESCRIPTION:$description') + '\r\n');
+    buffer.write('${foldLine('DESCRIPTION:$description')}\r\n');
 
-    buffer.write(foldLine('LOCATION:${escapeText(event.location)}') + '\r\n');
+    buffer.write('${foldLine('LOCATION:${escapeText(event.location)}')}\r\n');
 
     if (event.url != null && event.url!.isNotEmpty) {
-      buffer.write(foldLine('URL:${event.url}') + '\r\n');
+      buffer.write('${foldLine('URL:${event.url}')}\r\n');
     }
 
     buffer.write('STATUS:CONFIRMED\r\n');

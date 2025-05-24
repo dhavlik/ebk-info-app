@@ -39,7 +39,7 @@ class _SpaceStatusCardState extends State<SpaceStatusCard> {
           openUntilData = await _spaceApiService.getOpenUntil();
         } catch (e) {
           // Don't fail the whole request if openuntil fails
-          print('Failed to fetch open until data: $e');
+          debugPrint('Failed to fetch open until data: $e');
         }
       }
 
@@ -148,17 +148,17 @@ class _SpaceStatusCardState extends State<SpaceStatusCard> {
     // Use theme colors for better dark mode support
     final containerColor = isOpen
         ? (Theme.of(context).brightness == Brightness.dark
-            ? Colors.green.withOpacity(0.2)
+            ? Colors.green.withValues(alpha: 0.2)
             : Colors.green.shade50)
         : (Theme.of(context).brightness == Brightness.dark
-            ? Colors.red.withOpacity(0.2)
+            ? Colors.red.withValues(alpha: 0.2)
             : Colors.red.shade50);
     final borderColor = isOpen
         ? (Theme.of(context).brightness == Brightness.dark
-            ? Colors.green.withOpacity(0.5)
+            ? Colors.green.withValues(alpha: 0.5)
             : Colors.green.shade200)
         : (Theme.of(context).brightness == Brightness.dark
-            ? Colors.red.withOpacity(0.5)
+            ? Colors.red.withValues(alpha: 0.5)
             : Colors.red.shade200);
     final textIconColor = isOpen
         ? (Theme.of(context).brightness == Brightness.dark
