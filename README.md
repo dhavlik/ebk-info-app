@@ -1,5 +1,9 @@
 # ebk info
 
+[![CI/CD Pipeline](https://github.com/dhavlik/ebk-info-app/actions/workflows/ci.yml/badge.svg)](https://github.com/dhavlik/ebk-info-app/actions/workflows/ci.yml)
+[![Pull Request Checks](https://github.com/dhavlik/ebk-info-app/actions/workflows/pr.yml/badge.svg)](https://github.com/dhavlik/ebk-info-app/actions/workflows/pr.yml)
+[![Release](https://github.com/dhavlik/ebk-info-app/actions/workflows/release.yml/badge.svg)](https://github.com/dhavlik/ebk-info-app/actions/workflows/release.yml)
+
 A Flutter mobile and web application for the **Eigenbaukombinat (EBK)** hackerspace in Salzwedel, Germany. 
 
 ## What the App Does
@@ -112,6 +116,92 @@ This entire Flutter application was **created through AI-assisted development** 
 - **Real-world Validation**: Ensured integration with actual EBK services and APIs
 
 ### The Result
-A **functional Flutter application** that successfully demonstrates AI-assisted development capabilities. While the app works and integrates with real APIs, the code quality and architecture decisions reflect the strengths and limitations of current AI coding assistants.
 
-This development approach shows **how AI tools can rapidly prototype and implement features**, though traditional development practices like thorough code review, refactoring, and long-term maintainability considerations remain important for production systems.
+A complete, production-ready Flutter application with real-time features and comprehensive testing.
+
+## 🚀 CI/CD Pipeline
+
+This project includes a comprehensive GitHub Actions pipeline for automated testing, building, and deployment:
+
+### 🔄 Automated Workflows
+
+**Main CI/CD Pipeline** (`.github/workflows/ci.yml`)
+- **Testing**: Automated test suite with coverage reporting
+- **Code Quality**: Dart formatting and static analysis checks
+- **Multi-Platform Builds**: Android APK, iOS app, and Web builds
+- **Security Scanning**: Dependency vulnerability checks
+- **GitHub Pages**: Automatic web deployment on main branch
+
+**Pull Request Validation** (`.github/workflows/pr.yml`)
+- Quick formatting and analysis checks
+- Basic build verification
+- Prevents broken code from entering main branch
+
+**Release Automation** (`.github/workflows/release.yml`)
+- Triggered by version tags (e.g., `v1.0.0`)
+- Builds production APK and App Bundle for Android
+- Creates iOS build archive
+- Uploads release assets automatically
+- Generates release notes
+
+**Nightly Builds** (`.github/workflows/nightly.yml`)
+- Runs comprehensive tests every night
+- Checks for dependency updates
+- Early detection of integration issues
+
+### 🤖 Dependency Management
+
+**Dependabot** (`.github/dependabot.yml`)
+- Automatically updates Flutter/Dart dependencies weekly
+- Updates GitHub Actions to latest versions
+- Creates pull requests for security updates
+
+### 📋 Issue & PR Templates
+
+**Bug Reports** - Structured template with:
+- Platform and version information
+- Steps to reproduce
+- Device details and logs
+
+**Feature Requests** - Template including:
+- Problem description
+- Proposed solution
+- Priority and platform targeting
+
+**Pull Request Template** - Checklist for:
+- Code quality verification
+- Testing requirements
+- Platform compatibility
+
+### 🛡️ Security
+
+- **Security Policy** (`SECURITY.md`) with vulnerability reporting process
+- Automated security scanning in CI pipeline
+- Dependency vulnerability monitoring
+
+### 🏷️ Creating Releases
+
+To create a new release:
+
+```bash
+# Tag a new version
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This automatically:
+1. Triggers the release workflow
+2. Builds Android APK and App Bundle
+3. Creates iOS build archive  
+4. Uploads assets to GitHub release
+5. Generates release notes
+
+### 📊 Build Status
+
+Current build status can be monitored via the badges at the top of this README. All workflows include:
+
+- ✅ **Automated testing** with Flutter test suite
+- ✅ **Code quality checks** with dart analyze
+- ✅ **Multi-platform builds** (Android, iOS, Web)
+- ✅ **Security scanning** for vulnerabilities
+- ✅ **Dependency monitoring** with Dependabot
