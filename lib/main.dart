@@ -8,6 +8,9 @@ import 'l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Test comment for pre-commit formatting
+  print("Testing pre-commit hooks with intentionally bad formatting");
+
   // Benachrichtigungsservice initialisieren
   await NotificationService.initialize();
 
