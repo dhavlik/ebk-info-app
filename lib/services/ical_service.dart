@@ -154,10 +154,25 @@ class ICalService {
         final Uri uri = Uri.parse(dataUrl);
         return await launchUrl(uri);
       } else {
-        // On mobile, use add_2_calendar for native calendar integration
+        // On mobile, check calendar permissions first
+        final calendarPermission = await Permission.calendar.status;
+        
+        if (calendarPermission.isDenied) {
+          // Request calendar permission
+          final permissionResult = await Permission.calendar.request();
+          if (!permissionResult.isGranted) {
+            if (kDebugMode) {
+              print('📅 Calendar permission denied');
+            }
+            // Fall back to alternative method
+            return await _fallbackCalendarMethod(event);
+          }
+        }
+
+        // Use add_2_calendar for native calendar integration
         final calendarEvent = calendar.Event(
           title: event.title,
-          description: event.description,
+          description: event.description.isNotEmpty ? event.description : event.title,
           location: event.location,
           startDate: event.date,
           endDate: event.endTime ?? event.date.add(const Duration(hours: 1)),
@@ -176,45 +191,79 @@ class ICalService {
           print('📅 Calendar integration result: $result');
         }
         
-        return result;
+        if (result) {
+          return true;
+        } else {
+          // If native calendar fails, try fallback
+          return await _fallbackCalendarMethod(event);
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         print('📅 Calendar integration failed: $e');
       }
       
-      // Fallback to mailto approach if native calendar fails
-      try {
-        if (kDebugMode) {
-          print('📅 Attempting fallback: mailto approach');
-        }
-        
-        final icalContent = generateICalForEvent(event);
+      // Try fallback method
+      return await _fallbackCalendarMethod(event);
+    }
+  }
 
-        final emailSubject = Uri.encodeComponent('EBK Event: ${event.title}');
-        final emailBody = Uri.encodeComponent(
-            'Please find the EBK event details below:\n\n'
-            'Event: ${event.title}\n'
-            'Date: ${event.date.day}.${event.date.month}.${event.date.year}\n'
-            'Description: ${event.description}\n'
-            'Location: ${event.location}\n\n'
-            'iCal content (copy and save as .ics file):\n\n'
-            '$icalContent');
+  /// Fallback method when native calendar integration fails
+  static Future<bool> _fallbackCalendarMethod(Event event) async {
+    try {
+      if (kDebugMode) {
+        print('📅 Attempting fallback: iCal file download');
+      }
+      
+      final icalContent = generateICalForEvent(event);
+      
+      // Create data URL for iCal file
+      final dataUrl = 'data:text/calendar;charset=utf-8,${Uri.encodeComponent(icalContent)}';
+      
+      // Try to launch the data URL
+      final uri = Uri.parse(dataUrl);
+      if (await canLaunchUrl(uri)) {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      
+      // If data URL fails, try intent-based approach on Android
+      return await _tryIntentBasedCalendar(event);
+    } catch (e) {
+      if (kDebugMode) {
+        print('📅 Fallback method also failed: $e');
+      }
+      return false;
+    }
+  }
 
-        final mailtoUrl = 'mailto:?subject=$emailSubject&body=$emailBody';
-        final uri = Uri.parse(mailtoUrl);
-
-        if (await canLaunchUrl(uri)) {
-          if (kDebugMode) {
-            print('📅 Mailto fallback successful');
-          }
-          return await launchUrl(uri);
-        }
-      } catch (e2) {
-        if (kDebugMode) {
-          print('📅 Mailto fallback also failed: $e2');
-        }
-        // Final fallback: return false
+  /// Try Android intent-based calendar integration
+  static Future<bool> _tryIntentBasedCalendar(Event event) async {
+    try {
+      if (kDebugMode) {
+        print('📅 Attempting intent-based calendar integration');
+      }
+      
+      // Create calendar intent URL
+      final startTime = event.date.millisecondsSinceEpoch;
+      final endTime = (event.endTime ?? event.date.add(const Duration(hours: 1))).millisecondsSinceEpoch;
+      
+      final intentUrl = 'content://com.android.calendar/events'
+          '?title=${Uri.encodeComponent(event.title)}'
+          '&description=${Uri.encodeComponent(event.description)}'
+          '&eventLocation=${Uri.encodeComponent(event.location)}'
+          '&beginTime=$startTime'
+          '&endTime=$endTime'
+          '&allDay=${event.isAllDay ? 1 : 0}';
+      
+      final uri = Uri.parse(intentUrl);
+      if (await canLaunchUrl(uri)) {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('📅 Intent-based calendar integration failed: $e');
       }
       return false;
     }
