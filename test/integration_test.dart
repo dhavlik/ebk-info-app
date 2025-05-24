@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:ebk_app/main.dart' as app;
@@ -40,7 +41,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Benachrichtigungs-Icon finden und antippen
-      final notificationIcon = find.byIcon(Icons.notifications).or(find.byIcon(Icons.notifications_off));
+      Finder notificationIcon;
+      if (find.byIcon(Icons.notifications).evaluate().isNotEmpty) {
+        notificationIcon = find.byIcon(Icons.notifications);
+      } else {
+        notificationIcon = find.byIcon(Icons.notifications_off);
+      }
       expect(notificationIcon, findsOneWidget);
       
       await tester.tap(notificationIcon);
@@ -60,11 +66,21 @@ void main() {
       await tester.pumpAndSettle();
 
       // Sync-Icon (für Background-Polling) sollte sichtbar sein
-      final syncIcon = find.byIcon(Icons.sync).or(find.byIcon(Icons.sync_disabled));
+      Finder syncIcon;
+      if (find.byIcon(Icons.sync).evaluate().isNotEmpty) {
+        syncIcon = find.byIcon(Icons.sync);
+      } else {
+        syncIcon = find.byIcon(Icons.sync_disabled);
+      }
       expect(syncIcon, findsOneWidget);
 
       // Benachrichtigungs-Icon sollte sichtbar sein
-      final notificationIcon = find.byIcon(Icons.notifications).or(find.byIcon(Icons.notifications_off));
+      Finder notificationIcon;
+      if (find.byIcon(Icons.notifications).evaluate().isNotEmpty) {
+        notificationIcon = find.byIcon(Icons.notifications);
+      } else {
+        notificationIcon = find.byIcon(Icons.notifications_off);
+      }
       expect(notificationIcon, findsOneWidget);
     });
   });
@@ -84,7 +100,10 @@ void main() {
       // Status sollte entweder "OFFEN" oder "GESCHLOSSEN" sein
       final openText = find.text('OFFEN');
       final closedText = find.text('GESCHLOSSEN');
-      expect(openText.or(closedText), findsOneWidget);
+      // Überprüfen, ob einer der Status-Texte vorhanden ist
+      final hasOpenText = openText.evaluate().isNotEmpty;
+      final hasClosedText = closedText.evaluate().isNotEmpty;
+      expect(hasOpenText || hasClosedText, isTrue);
     });
   });
 
