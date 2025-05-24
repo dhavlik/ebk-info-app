@@ -155,11 +155,11 @@ class ICalService {
         return await launchUrl(uri);
       } else {
         // On mobile, check calendar permissions first
-        final calendarPermission = await Permission.calendar.status;
+        final calendarPermission = await Permission.calendarWriteOnly.status;
 
         if (calendarPermission.isDenied) {
           // Request calendar permission
-          final permissionResult = await Permission.calendar.request();
+          final permissionResult = await Permission.calendarWriteOnly.request();
           if (!permissionResult.isGranted) {
             if (kDebugMode) {
               print('📅 Calendar permission denied');

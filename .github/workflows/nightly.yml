@@ -9,42 +9,42 @@ jobs:
   nightly-build:
     name: Nightly Build & Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-          
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.0'
           channel: 'stable'
           cache: true
-          
+
       - name: Get dependencies
         run: flutter pub get
-        
+
       - name: Run comprehensive tests
         run: |
           flutter test --coverage
           flutter analyze --fatal-infos
           dart format --output=none --set-exit-if-changed .
-          
+
       - name: Build all platforms
         run: |
           flutter build apk --release
           flutter build web --release
-          
+
       - name: Security audit
         run: dart pub audit
         continue-on-error: true
-        
+
       - name: Upload nightly artifacts
         uses: actions/upload-artifact@v4
         with:

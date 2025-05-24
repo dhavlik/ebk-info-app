@@ -149,7 +149,7 @@
         "example": "2025-05-24"
       },
       "startTime": {
-        "type": "String", 
+        "type": "String",
         "example": "14:00"
       },
       "endTime": {
@@ -164,7 +164,7 @@
     "placeholders": {
       "startTime": {
         "type": "String",
-        "example": "14:00" 
+        "example": "14:00"
       },
       "endTime": {
         "type": "String",

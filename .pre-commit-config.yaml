@@ -1,0 +1,68 @@
+# Pre-commit hooks for Flutter/Dart project
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.(md|dart)$'
+      - id: end-of-file-fixer
+        exclude: '\.(md|dart)$'
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: Dart Format
+        entry: dart format
+        language: system
+        files: '\.dart$'
+        args: ['.']
+        pass_filenames: false
+        description: 'Format Dart code using dart format'
+
+      - id: dart-analyze
+        name: Dart Analyze
+        entry: dart analyze --no-fatal-warnings
+        language: system
+        files: '\.dart$'
+        pass_filenames: false
+        description: 'Analyze Dart code for issues'
+
+      - id: dart-test
+        name: Dart Test
+        entry: flutter test
+        language: system
+        files: '\.dart$'
+        pass_filenames: false
+        description: 'Run Dart tests'
+        stages: [manual]  # Only run when explicitly requested
+
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        exclude: '.*'  # Exclude all files since this is a Dart project
+
+# Configuration for specific hooks
+default_language_version:
+  python: python3
+
+# Global exclude patterns
+exclude: |
+  (?x)^(
+    \.dart_tool/.*|
+    \.flutter-plugins.*|
+    \.metadata|
+    \.packages|
+    build/.*|
+    .*\.g\.dart|
+    .*\.freezed\.dart|
+    .*\.mocks\.dart|
+    pubspec\.lock
+  )$

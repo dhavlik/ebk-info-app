@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/opening_status_service.dart';
+import '../services/space_api_service.dart';
 import '../models/space_api_response.dart' as space_api;
 
 class OpeningHoursCard extends StatefulWidget {
@@ -10,7 +10,7 @@ class OpeningHoursCard extends StatefulWidget {
 }
 
 class _OpeningHoursCardState extends State<OpeningHoursCard> {
-  final OpeningStatusService _statusService = OpeningStatusService();
+  final SpaceApiService _statusService = SpaceApiService();
   space_api.SpaceApiResponse? _spaceData;
   bool _isLoading = true;
   String? _error;

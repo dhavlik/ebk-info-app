@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:ebk_app/main.dart' as app;
 import 'package:ebk_app/services/background_polling_service.dart';
-import 'package:ebk_app/services/notification_service.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
