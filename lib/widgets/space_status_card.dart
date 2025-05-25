@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../services/space_api_service.dart';
+import '../services/background_polling_service.dart';
 import '../models/space_api_response.dart' as space_api;
 import '../l10n/app_localizations.dart';
 
@@ -16,11 +18,36 @@ class _SpaceStatusCardState extends State<SpaceStatusCard> {
   space_api.OpenUntilResponse? _openUntilData;
   bool _isLoading = true;
   String? _error;
+  StreamSubscription<SpaceStatusUpdate>? _statusSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadSpaceData();
+    _subscribeToStatusUpdates();
+  }
+
+  @override
+  void dispose() {
+    _statusSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Horcht auf Status-Updates vom BackgroundPollingService
+  void _subscribeToStatusUpdates() {
+    _statusSubscription =
+        BackgroundPollingService.statusUpdates.listen((update) {
+      if (mounted) {
+        setState(() {
+          _spaceData = update.spaceData;
+          _openUntilData = update.openUntil != null
+              ? space_api.OpenUntilResponse(closeTime: update.openUntil!)
+              : null;
+          _isLoading = false;
+          _error = null;
+        });
+      }
+    });
   }
 
   Future<void> _loadSpaceData() async {
