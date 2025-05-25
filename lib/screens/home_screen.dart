@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (kDebugMode)
             Container(
               margin: const EdgeInsets.only(right: 8),
-              child: Tooltip(
+              child: const Tooltip(
                 message:
                     'Debug Mode: Using team-tfm.com endpoints, 15s polling',
                 child: Icon(

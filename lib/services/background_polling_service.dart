@@ -49,7 +49,7 @@ class BackgroundPollingService {
     if (_isRunning) return;
 
     _isRunning = true;
-    final interval = kDebugMode ? '15 seconds' : '5 minutes';
+    const interval = kDebugMode ? '15 seconds' : '5 minutes';
     log('Background Polling Service gestartet (Intervall: $interval)');
 
     // Sofort einmal ausführen
