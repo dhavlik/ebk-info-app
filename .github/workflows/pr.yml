@@ -4,17 +4,15 @@ on:
   pull_request:
     branches:
       - main
-      - develop
 
 jobs:
-  validate:
-    name: Validate PR
+  test:
+    name: Test & Analyze
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       actions: read
       checks: write
-      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -39,74 +37,69 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Check formatting and suggest fixes
+      - name: Check and apply dart format
         id: format-check
         run: |
-          # Check current formatting
-          if ! dart format --output=none --set-exit-if-changed .; then
+          # Apply dart format
+          dart format .
+
+          # Check if there are any changes
+          if ! git diff --quiet; then
+            echo "🔧 Formatting changes detected"
             echo "needs_formatting=true" >> $GITHUB_OUTPUT
-            echo "🔧 Formatting issues detected. Generating diff..."
 
-            # Generate formatting diff
-            dart format . > /dev/null
-            git diff > format.diff
+            # If this is the main branch, try to auto-commit
+            if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
+              echo "📝 Attempting to commit formatting fixes to main branch..."
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add .
+              git commit -m "🎨 Auto-fix: Apply dart format [skip ci]"
 
-            if [ -s format.diff ]; then
-              echo "Format diff generated"
-              echo "diff_available=true" >> $GITHUB_OUTPUT
+              # Try to push, but don't fail if it doesn't work
+              if git push; then
+                echo "✅ Successfully committed formatting fixes"
+                echo "committed=true" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ Could not push directly, will create PR instead"
+                echo "committed=false" >> $GITHUB_OUTPUT
+              fi
             else
-              echo "No diff generated"
-              echo "diff_available=false" >> $GITHUB_OUTPUT
+              echo "📋 Not main branch or not a push event, skipping auto-commit"
+              echo "committed=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "✅ Code is properly formatted"
+            echo "✅ No formatting changes needed"
             echo "needs_formatting=false" >> $GITHUB_OUTPUT
-            echo "diff_available=false" >> $GITHUB_OUTPUT
+            echo "committed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Comment PR with formatting suggestions
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.diff_available == 'true'
-        uses: actions/github-script@v7
+      - name: Create PR for formatting fixes
+        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
+        uses: peter-evans/create-pull-request@v6
         with:
-          script: |
-            const fs = require('fs');
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "🎨 Auto-fix: Apply dart format"
+          title: "🎨 Automated Code Formatting"
+          body: |
+            ## Automated Code Formatting
 
-            try {
-              const diff = fs.readFileSync('format.diff', 'utf8');
+            This PR applies `dart format` to ensure consistent code style.
 
-              if (diff.trim()) {
-                const comment = `## 🎨 Code Formatting Suggestions
+            **Changes:**
+            - Applied automatic dart formatting
+            - No functional changes to the code
 
-            Your code needs some formatting adjustments. Here's what \`dart format\` would change:
+            **Note:** This PR was created automatically by GitHub Actions.
+          branch: automated-formatting-${{ github.run_number }}
+          delete-branch: true
 
-            \`\`\`diff
-            ${diff}
-            \`\`\`
-
-            **To fix these issues:**
-            1. Run \`dart format .\` in your local repository
-            2. Commit and push the changes
-
-            Or use the pre-commit hooks to automatically format on commit:
-            \`\`\`bash
-            ./scripts/setup-precommit.sh
-            \`\`\``;
-
-                github.rest.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: comment
-                });
-              }
-            } catch (error) {
-              console.log('Could not read diff file or diff is empty');
-            }
-
-      - name: Fail if formatting is needed
-        if: steps.format-check.outputs.needs_formatting == 'true'
+      - name: Fail if formatting needed but couldn't be applied
+        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
         run: |
-          echo "❌ Code formatting is required. Please run 'dart format .' and commit the changes."
+          echo "❌ Code formatting is required but couldn't be auto-committed."
+          echo "📋 A pull request has been created with the necessary formatting changes."
+          echo "🔗 Please review and merge the automated formatting PR."
           exit 1
 
       - name: Analyze project source
@@ -115,18 +108,14 @@ jobs:
       - name: Run tests
         run: |
           # Run unit and widget tests, excluding integration tests for now
-          flutter test \
+          flutter test --coverage \
             --exclude-tags=integration \
             --dart-define=FLUTTER_TEST_INTEGRATION_DISABLED=true
 
-      - name: Check for security vulnerabilities
-        run: dart pub audit
-        continue-on-error: true
-
-  build-test:
-    name: Test Build
+  build-android:
+    name: Build Android
     runs-on: ubuntu-latest
-    needs: validate
+    needs: test
 
     steps:
       - name: Checkout code
@@ -148,8 +137,41 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Test Android build
-        run: flutter build apk --debug
+      - name: Build APK
+        run: flutter build apk --release
 
-      - name: Test Web build
-        run: flutter build web --debug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        run: flutter build web --release --base-href="/ebk-info-app/"
+
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web/
+          retention-days: 30
