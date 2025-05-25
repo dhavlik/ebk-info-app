@@ -51,10 +51,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showLocationInOpenStreetMap => 'Show location in OpenStreetMap';
 
   @override
-  String get open => 'open';
+  String get open => 'Open';
 
   @override
-  String get closed => 'closed';
+  String get closed => 'Closed';
 
   @override
   String openUntil(String time) {

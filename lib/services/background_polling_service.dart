@@ -90,6 +90,21 @@ class BackgroundPollingService {
       final response = await _spaceApiService.getSpaceStatus();
       String? openUntil;
 
+      // Prüfen ob sich der Status geändert hat
+      bool statusChanged = false;
+      bool statusChangedToOpen = false;
+
+      if (_lastResponse != null) {
+        statusChanged = _lastResponse!.state.open != response.state.open;
+        statusChangedToOpen = !_lastResponse!.state.open && response.state.open;
+      }
+
+      // Wenn Space von geschlossen auf offen wechselt, openUntil-Daten zurücksetzen
+      if (statusChangedToOpen) {
+        _lastOpenUntil = null;
+        log('Space Status wechselte zu OPEN - OpenUntil-Daten zurückgesetzt');
+      }
+
       // OpenUntil-Zeit abrufen wenn der Space offen ist
       if (response.state.open) {
         try {
@@ -100,14 +115,8 @@ class BackgroundPollingService {
         }
       }
 
-      // Prüfen ob sich der Status geändert hat
-      bool statusChanged = false;
-      bool openUntilChanged = false;
-
-      if (_lastResponse != null) {
-        statusChanged = _lastResponse!.state.open != response.state.open;
-        openUntilChanged = _lastOpenUntil != openUntil;
-      }
+      // OpenUntil-Änderung prüfen (nach möglichem Reset)
+      bool openUntilChanged = _lastOpenUntil != openUntil;
 
       // Bei Statusänderung Benachrichtigung senden
       if (statusChanged &&
@@ -121,10 +130,11 @@ class BackgroundPollingService {
         log('Status-Benachrichtigung gesendet: $status');
       }
 
-      // Bei OpenUntil-Änderung Benachrichtigung senden (nur wenn offen)
+      // Bei OpenUntil-Änderung Benachrichtigung senden (nur wenn offen und nicht bei Status-Wechsel zu offen)
       if (openUntilChanged &&
           response.state.open &&
           openUntil != null &&
+          !statusChangedToOpen &&
           _getOpenUntilChangedTitle != null &&
           _getOpenUntilChangedBody != null) {
         await NotificationService.showStatusChangeNotification(
@@ -132,6 +142,18 @@ class BackgroundPollingService {
           body: _getOpenUntilChangedBody!(openUntil),
         );
         log('OpenUntil-Benachrichtigung gesendet: $openUntil');
+      }
+
+      // Spezielle OpenUntil-Benachrichtigung beim ersten Öffnen (wenn Zeit verfügbar ist)
+      if (statusChangedToOpen &&
+          openUntil != null &&
+          _getOpenUntilChangedTitle != null &&
+          _getOpenUntilChangedBody != null) {
+        await NotificationService.showStatusChangeNotification(
+          title: _getOpenUntilChangedTitle!(),
+          body: _getOpenUntilChangedBody!(openUntil),
+        );
+        log('Erste OpenUntil-Benachrichtigung beim Öffnen gesendet: $openUntil');
       }
 
       // Aktuellen Status speichern

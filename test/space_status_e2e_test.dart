@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:ebk_app/services/space_api_service.dart';
 import 'package:ebk_app/models/space_api_response.dart' as space_api;
+import 'package:ebk_app/l10n/app_localizations.dart';
 
 // Mock HTTP client for testing
 class MockHttpClient extends http.BaseClient {
@@ -96,6 +98,16 @@ void main() {
       );
 
       return MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('de'),
+        ],
         home: Scaffold(
           body: TestSpaceStatusCard(client: mockClient),
         ),
@@ -106,7 +118,9 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
-          'https://spaceapi.eigenbaukombinat.de/': closedSpaceResponse,
+          'https://team-tfm.com/status.json': closedSpaceResponse, // Debug URL
+          'https://spaceapi.eigenbaukombinat.de/':
+              closedSpaceResponse, // Production URL
         },
       ));
 
@@ -135,9 +149,13 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
-          'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
+          'https://team-tfm.com/status.json': openSpaceResponse, // Debug URL
+          'https://spaceapi.eigenbaukombinat.de/':
+              openSpaceResponse, // Production URL
+          'https://team-tfm.com/openuntil.json':
+              openUntilNullResponse, // Debug URL
           'https://spaceapi.eigenbaukombinat.de/openuntil.json':
-              openUntilNullResponse,
+              openUntilNullResponse, // Production URL
         },
       ));
 
@@ -157,9 +175,13 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
-          'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
+          'https://team-tfm.com/status.json': openSpaceResponse, // Debug URL
+          'https://spaceapi.eigenbaukombinat.de/':
+              openSpaceResponse, // Production URL
+          'https://team-tfm.com/openuntil.json':
+              openUntilWithTimeResponse, // Debug URL
           'https://spaceapi.eigenbaukombinat.de/openuntil.json':
-              openUntilWithTimeResponse,
+              openUntilWithTimeResponse, // Production URL
         },
       ));
 
@@ -199,11 +221,17 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestApp(
         mockResponses: {
-          'https://spaceapi.eigenbaukombinat.de/': openSpaceResponse,
-          'https://spaceapi.eigenbaukombinat.de/openuntil.json': 'Not Found',
+          'https://team-tfm.com/status.json': openSpaceResponse, // Debug URL
+          'https://spaceapi.eigenbaukombinat.de/':
+              openSpaceResponse, // Production URL
+          'https://team-tfm.com/openuntil.json': 'Not Found', // Debug URL
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json':
+              'Not Found', // Production URL
         },
         statusCodes: {
-          'https://spaceapi.eigenbaukombinat.de/openuntil.json': 404,
+          'https://team-tfm.com/openuntil.json': 404, // Debug URL
+          'https://spaceapi.eigenbaukombinat.de/openuntil.json':
+              404, // Production URL
         },
       ));
 
@@ -359,8 +387,9 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
 
   Widget _buildStatusRow() {
     final isOpen = _spaceData!.state.open;
+    final l10n = AppLocalizations.of(context)!;
+    final statusText = isOpen ? l10n.open : l10n.closed;
     final statusColor = isOpen ? Colors.green : Colors.red;
-    final statusText = isOpen ? 'Open' : 'Closed';
     final statusIcon = isOpen ? Icons.lock_open : Icons.lock;
 
     return Container(
