@@ -4,6 +4,19 @@ import '../models/space_api_response.dart';
 import 'space_api_service.dart';
 import 'notification_service.dart';
 
+/// Klasse für Status-Updates, die über den Stream gesendet werden
+class SpaceStatusUpdate {
+  final SpaceApiResponse spaceData;
+  final String? openUntil;
+  final DateTime timestamp;
+
+  SpaceStatusUpdate({
+    required this.spaceData,
+    this.openUntil,
+    required this.timestamp,
+  });
+}
+
 class BackgroundPollingService {
   static Timer? _timer;
   static SpaceApiResponse? _lastResponse;
@@ -17,6 +30,14 @@ class BackgroundPollingService {
   static String Function(String time)? _getOpenUntilChangedBody;
 
   static bool _isRunning = false;
+
+  // Stream Controller für Status-Updates
+  static final StreamController<SpaceStatusUpdate> _statusUpdateController =
+      StreamController<SpaceStatusUpdate>.broadcast();
+
+  /// Stream für Status-Updates - Widgets können darauf hören
+  static Stream<SpaceStatusUpdate> get statusUpdates =>
+      _statusUpdateController.stream;
 
   /// Startet das automatische Polling alle 5 Minuten
   static void startPolling() {
@@ -40,6 +61,14 @@ class BackgroundPollingService {
     _timer = null;
     _isRunning = false;
     log('Background Polling Service gestoppt');
+  }
+
+  /// Neustarten des Polling-Services (bei App-Resume nützlich)
+  static void restartPolling() {
+    if (_isRunning) {
+      stopPolling();
+    }
+    startPolling();
   }
 
   /// Prüft den aktuellen Space-Status und sendet Benachrichtigungen bei Änderungen
@@ -99,6 +128,13 @@ class BackgroundPollingService {
       _lastResponse = response;
       _lastOpenUntil = openUntil;
 
+      // Status-Update über Stream senden (für UI-Updates)
+      _statusUpdateController.add(SpaceStatusUpdate(
+        spaceData: response,
+        openUntil: openUntil,
+        timestamp: DateTime.now(),
+      ));
+
       log('Status-Check abgeschlossen: ${response.state.open ? "offen" : "geschlossen"}');
     } catch (e) {
       log('Fehler beim Status-Check: $e');
@@ -118,6 +154,12 @@ class BackgroundPollingService {
     stopPolling();
     _lastResponse = null;
     _lastOpenUntil = null;
+  }
+
+  /// Ressourcen freigeben (sollte nur beim App-Shutdown aufgerufen werden)
+  static void dispose() {
+    stopPolling();
+    _statusUpdateController.close();
   }
 
   /// Setzt die Lokalisierungs-Callbacks für Benachrichtigungen
