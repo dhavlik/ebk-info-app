@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:flutter/foundation.dart';
 import '../models/space_api_response.dart';
 import 'space_api_service.dart';
 import 'notification_service.dart';
@@ -39,18 +40,23 @@ class BackgroundPollingService {
   static Stream<SpaceStatusUpdate> get statusUpdates =>
       _statusUpdateController.stream;
 
-  /// Startet das automatische Polling alle 5 Minuten
+  /// Polling-Intervall: 15 Sekunden im Debug-Modus, 5 Minuten in Production
+  static Duration get _pollingInterval =>
+      kDebugMode ? const Duration(seconds: 15) : const Duration(minutes: 5);
+
+  /// Startet das automatische Polling (15s debug, 5min production)
   static void startPolling() {
     if (_isRunning) return;
 
     _isRunning = true;
-    log('Background Polling Service gestartet');
+    final interval = kDebugMode ? '15 seconds' : '5 minutes';
+    log('Background Polling Service gestartet (Intervall: $interval)');
 
     // Sofort einmal ausführen
     _checkSpaceStatus();
 
-    // Timer für alle 5 Minuten
-    _timer = Timer.periodic(const Duration(minutes: 5), (timer) {
+    // Timer mit dynamischem Intervall (15s debug, 5min production)
+    _timer = Timer.periodic(_pollingInterval, (timer) {
       _checkSpaceStatus();
     });
   }
@@ -74,7 +80,11 @@ class BackgroundPollingService {
   /// Prüft den aktuellen Space-Status und sendet Benachrichtigungen bei Änderungen
   static Future<void> _checkSpaceStatus() async {
     try {
-      log('Überprüfe Space-Status...');
+      if (kDebugMode) {
+        log('Überprüfe Space-Status (Debug-Modus: team-tfm.com endpoints)...');
+      } else {
+        log('Überprüfe Space-Status...');
+      }
 
       // Aktuellen Status abrufen
       final response = await _spaceApiService.getSpaceStatus();

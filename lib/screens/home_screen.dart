@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/event.dart';
 import '../services/event_service.dart';
 import '../services/background_polling_service.dart';
@@ -150,6 +151,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         centerTitle: true,
         actions: [
+          // Debug-Modus Indikator
+          if (kDebugMode)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: Tooltip(
+                message:
+                    'Debug Mode: Using team-tfm.com endpoints, 15s polling',
+                child: Icon(
+                  Icons.bug_report,
+                  size: 18,
+                  color: Colors.orange,
+                ),
+              ),
+            ),
           // Status-Indikator für Background-Polling
           Container(
             margin: const EdgeInsets.only(right: 8),
