@@ -1,11 +1,23 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/space_api_response.dart';
 
 class SpaceApiService {
-  static const String _apiUrl = 'https://spaceapi.eigenbaukombinat.de/';
-  static const String _openUntilUrl =
+  // Production endpoints
+  static const String _prodApiUrl = 'https://spaceapi.eigenbaukombinat.de/';
+  static const String _prodOpenUntilUrl =
       'https://spaceapi.eigenbaukombinat.de/openuntil.json';
+
+  // Debug endpoints for testing
+  static const String _debugApiUrl = 'https://team-tfm.com/status.json';
+  static const String _debugOpenUntilUrl =
+      'https://team-tfm.com/openuntil.json';
+
+  // Use debug endpoints when in debug mode
+  static String get _apiUrl => kDebugMode ? _debugApiUrl : _prodApiUrl;
+  static String get _openUntilUrl =>
+      kDebugMode ? _debugOpenUntilUrl : _prodOpenUntilUrl;
 
   final http.Client _client;
 

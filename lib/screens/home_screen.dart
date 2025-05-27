@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/event.dart';
 import '../services/event_service.dart';
-import '../services/background_polling_service.dart';
+import '../services/background_task_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/event_card.dart';
 import '../widgets/space_status_card.dart';
@@ -15,7 +16,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Event> events = [];
   bool isLoading = true;
   bool showAllEvents = false;
@@ -25,7 +26,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadEvents();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App in den Vordergrund - manuelle Aktualisierung
+        _refreshData();
+        break;
+      case AppLifecycleState.paused:
+        // App in den Hintergrund - Polling läuft weiter
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        break;
+    }
   }
 
   @override
@@ -37,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _setupLocalizationCallbacks() {
     final l10n = AppLocalizations.of(context);
     if (l10n != null) {
-      BackgroundPollingService.setLocalizationCallbacks(
+      BackgroundTaskService.setLocalizationCallbacks(
         getStatusChangedTitle: () => l10n.ebkStatusChanged,
         getStatusChangedBody: (status) => l10n.eigenbaukombinatIsNow(status),
         getOpenUntilChangedTitle: () => l10n.ebkOpeningTimeChanged,
@@ -47,33 +73,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadEvents() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-
     try {
-      final loadedEvents = await _eventService.getEvents(
-        limit: showAllEvents ? null : 5,
-      );
-
       setState(() {
-        events = loadedEvents;
+        isLoading = true;
+        errorMessage = null;
+      });
+
+      final loadedEvents = await _eventService.getEvents();
+      setState(() {
+        events = showAllEvents ? loadedEvents : loadedEvents.take(3).toList();
         isLoading = false;
       });
     } catch (e) {
       setState(() {
-        errorMessage =
-            'Could not reach calendar endpoint'; // Keep hardcoded as fallback
-        events = EventService.getSampleEvents(); // Fallback to sample events
+        errorMessage = e.toString();
         isLoading = false;
+        events = EventService.getSampleEvents(); // Fallback to sample events
       });
     }
   }
 
   Future<void> _refreshData() async {
-    // Manuelle Aktualisierung des Space-Status
-    await BackgroundPollingService.checkNow();
+    // Background-Service manuell triggern
+    await BackgroundTaskService.checkNow();
     // Events neu laden
     await _loadEvents();
   }
@@ -110,6 +132,106 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadEvents();
   }
 
+  Widget _buildDebugPanel(AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        border: Border.all(color: Colors.orange),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bug_report, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(
+                'Debug Panel',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await NotificationService.showTestNotification();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Test notification sent')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.notifications, size: 16),
+                label: const Text('Test Notification'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await BackgroundTaskService.checkNow();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Manual status check triggered')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Check Status'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              FutureBuilder<bool>(
+                future: _checkBackgroundStatus(),
+                builder: (context, snapshot) {
+                  final isEnabled = snapshot.data ?? false;
+                  return ElevatedButton.icon(
+                    onPressed: () async {
+                      if (isEnabled) {
+                        await BackgroundTaskService.stopBackgroundTasks();
+                      } else {
+                        await BackgroundTaskService.startBackgroundTasks();
+                      }
+                      setState(() {});
+                    },
+                    icon: Icon(
+                      isEnabled ? Icons.pause : Icons.play_arrow,
+                      size: 16,
+                    ),
+                    label: Text(isEnabled ? 'Stop BG' : 'Start BG'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isEnabled ? Colors.red : Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _checkBackgroundStatus() async {
+    // Check both WorkManager and flutter_background status
+    return BackgroundTaskService.isRunning;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -123,18 +245,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         centerTitle: true,
         actions: [
-          // Status-Indikator für Background-Polling
+          // Debug-Modus Indikator
+          if (kDebugMode)
+            const Tooltip(
+              message: 'Debug Mode',
+              child: Icon(
+                Icons.bug_report,
+                size: 18,
+                color: Colors.orange,
+              ),
+            ),
+          // Status-Indikator für Background-Tasks
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  BackgroundPollingService.isRunning
+                  BackgroundTaskService.isRunning
                       ? Icons.sync
                       : Icons.sync_disabled,
                   size: 18,
-                  color: BackgroundPollingService.isRunning
+                  color: BackgroundTaskService.isRunning
                       ? Colors.green
                       : Colors.grey,
                 ),
@@ -159,16 +291,13 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshData,
-            tooltip: l10n.refresh,
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
+            ? const Center(child: CircularProgressIndicator())
             : CustomScrollView(
                 slivers: [
                   // Space Status
@@ -176,10 +305,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: SpaceStatusCard(),
                   ),
 
-                  // Veranstaltungen Header
+                  // Events Section
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                       child: Column(
                         children: [
                           Row(
@@ -191,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   l10n.events,
                                   style: Theme.of(context)
                                       .textTheme
-                                      .titleLarge
+                                      .headlineSmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -200,36 +329,39 @@ class _HomeScreenState extends State<HomeScreen> {
                               if (events.isNotEmpty)
                                 TextButton(
                                   onPressed: _toggleShowAllEvents,
-                                  child: Text(showAllEvents
-                                      ? l10n.showLess
-                                      : l10n.showAll),
+                                  child: Text(
+                                    showAllEvents
+                                        ? l10n.showLess
+                                        : l10n.showAll,
+                                  ),
                                 ),
                             ],
                           ),
                           if (errorMessage != null)
                             Container(
                               margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: Theme.of(context)
                                     .colorScheme
                                     .errorContainer,
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                     color: Theme.of(context).colorScheme.error),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.warning_amber,
-                                      size: 16,
-                                      color:
-                                          Theme.of(context).colorScheme.error),
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      l10n.couldNotReachCalendarEndpoint,
+                                      errorMessage!,
                                       style: TextStyle(
-                                        fontSize: 12,
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onErrorContainer,
@@ -244,60 +376,65 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  // Veranstaltungsliste
-                  events.isEmpty
-                      ? SliverToBoxAdapter(
-                          child: Container(
-                            padding: const EdgeInsets.all(32),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.event_busy,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Keine kommenden Veranstaltungen',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: Colors.grey[600],
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Schauen Sie später wieder vorbei oder ziehen Sie zum Aktualisieren nach unten.',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.grey[500],
-                                      ),
-                                ),
-                              ],
-                            ),
+                  // Important Links Section
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.link,
+                            size: 24,
+                            color: Colors.grey[600],
                           ),
-                        )
-                      : SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              return EventCard(event: events[index]);
-                            },
-                            childCount: events.length,
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.importantLinks,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  color: Colors.grey[500],
+                                ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.linkCollectionDescription,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey[500],
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Events List
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => EventCard(event: events[index]),
+                      childCount: events.length,
+                    ),
+                  ),
+
+                  // Important Links
+                  const SliverToBoxAdapter(
+                    child: ImportantLinksCard(),
+                  ),
+
+                  // Debug Panel (only visible in debug mode)
+                  if (kDebugMode)
+                    SliverToBoxAdapter(
+                      child: _buildDebugPanel(l10n),
+                    ),
 
                   // Bottom Padding
                   const SliverToBoxAdapter(
                     child: SizedBox(height: 20),
-                  ),
-
-                  // Wichtige Links
-                  const SliverToBoxAdapter(
-                    child: ImportantLinksCard(),
                   ),
                 ],
               ),

@@ -75,4 +75,38 @@ class NotificationService {
   static Future<void> requestPermissions() async {
     await Permission.notification.request();
   }
+
+  /// Test notification for debugging
+  static Future<void> showTestNotification() async {
+    if (!_initialized) await initialize();
+
+    const androidDetails = AndroidNotificationDetails(
+      'ebk_test',
+      'EBK Test Notifications',
+      channelDescription: 'Test notifications for debugging',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      999,
+      'Test Notification',
+      'This is a test notification - ${DateTime.now().toString()}',
+      notificationDetails,
+    );
+  }
 }

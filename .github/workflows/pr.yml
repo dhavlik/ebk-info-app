@@ -13,6 +13,7 @@ jobs:
       contents: write
       actions: read
       checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -74,33 +75,65 @@ jobs:
             echo "committed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create PR for formatting fixes
+      - name: Generate formatting diff
         if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        uses: peter-evans/create-pull-request@v6
+        id: formatting-diff
+        run: |
+          # Generate a detailed diff of formatting changes
+          echo "## 🎨 Code Formatting Suggestions" > formatting_comment.md
+          echo "" >> formatting_comment.md
+          echo "The following files need formatting adjustments to follow Dart style guidelines:" >> formatting_comment.md
+          echo "" >> formatting_comment.md
+
+          # List changed files
+          echo "### Files that need formatting:" >> formatting_comment.md
+          git diff --name-only >> formatting_comment.md
+          echo "" >> formatting_comment.md
+
+          echo "### Formatting changes:" >> formatting_comment.md
+          echo '```diff' >> formatting_comment.md
+          git diff >> formatting_comment.md
+          echo '```' >> formatting_comment.md
+          echo "" >> formatting_comment.md
+
+          echo "### How to apply these changes:" >> formatting_comment.md
+          echo "Run the following command in your local repository:" >> formatting_comment.md
+          echo '```bash' >> formatting_comment.md
+          echo 'dart format .' >> formatting_comment.md
+          echo '```' >> formatting_comment.md
+          echo "" >> formatting_comment.md
+          echo "_This comment was generated automatically by GitHub Actions._" >> formatting_comment.md
+
+      - name: Comment on PR with formatting suggestions
+        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
+        uses: actions/github-script@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "🎨 Auto-fix: Apply dart format"
-          title: "🎨 Automated Code Formatting"
-          body: |
-            ## Automated Code Formatting
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const commentBody = fs.readFileSync('formatting_comment.md', 'utf8');
 
-            This PR applies `dart format` to ensure consistent code style.
+            // Only comment on pull requests
+            if (context.eventName === 'pull_request') {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
 
-            **Changes:**
-            - Applied automatic dart formatting
-            - No functional changes to the code
+              console.log('✅ Posted formatting suggestions as PR comment');
+            } else {
+              console.log('ℹ️ Not a pull request event, skipping comment');
+            }
 
-            **Note:** This PR was created automatically by GitHub Actions.
-          branch: automated-formatting-${{ github.run_number }}
-          delete-branch: true
-
-      - name: Fail if formatting needed but couldn't be applied
+      - name: Reset formatting changes for further testing
         if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
         run: |
-          echo "❌ Code formatting is required but couldn't be auto-committed."
-          echo "📋 A pull request has been created with the necessary formatting changes."
-          echo "🔗 Please review and merge the automated formatting PR."
-          exit 1
+          # Reset the formatting changes so tests run on original code
+          git checkout .
+          echo "⚠️ Code formatting is required. Please run 'dart format .' locally."
+          echo "📋 A comment with formatting suggestions has been posted on the PR."
 
       - name: Analyze project source
         run: flutter analyze

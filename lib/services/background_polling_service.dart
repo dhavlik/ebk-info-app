@@ -1,8 +1,22 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:flutter/foundation.dart';
 import '../models/space_api_response.dart';
 import 'space_api_service.dart';
 import 'notification_service.dart';
+
+/// Klasse für Status-Updates, die über den Stream gesendet werden
+class SpaceStatusUpdate {
+  final SpaceApiResponse spaceData;
+  final String? openUntil;
+  final DateTime timestamp;
+
+  SpaceStatusUpdate({
+    required this.spaceData,
+    this.openUntil,
+    required this.timestamp,
+  });
+}
 
 class BackgroundPollingService {
   static Timer? _timer;
@@ -18,18 +32,31 @@ class BackgroundPollingService {
 
   static bool _isRunning = false;
 
-  /// Startet das automatische Polling alle 5 Minuten
+  // Stream Controller für Status-Updates
+  static final StreamController<SpaceStatusUpdate> _statusUpdateController =
+      StreamController<SpaceStatusUpdate>.broadcast();
+
+  /// Stream für Status-Updates - Widgets können darauf hören
+  static Stream<SpaceStatusUpdate> get statusUpdates =>
+      _statusUpdateController.stream;
+
+  /// Polling-Intervall: 15 Sekunden im Debug-Modus, 5 Minuten in Production
+  static Duration get _pollingInterval =>
+      kDebugMode ? const Duration(seconds: 15) : const Duration(minutes: 5);
+
+  /// Startet das automatische Polling (15s debug, 5min production)
   static void startPolling() {
     if (_isRunning) return;
 
     _isRunning = true;
-    log('Background Polling Service gestartet');
+    const interval = kDebugMode ? '15 seconds' : '5 minutes';
+    log('Background Polling Service gestartet (Intervall: $interval)');
 
     // Sofort einmal ausführen
     _checkSpaceStatus();
 
-    // Timer für alle 5 Minuten
-    _timer = Timer.periodic(const Duration(minutes: 5), (timer) {
+    // Timer mit dynamischem Intervall (15s debug, 5min production)
+    _timer = Timer.periodic(_pollingInterval, (timer) {
       _checkSpaceStatus();
     });
   }
@@ -42,14 +69,41 @@ class BackgroundPollingService {
     log('Background Polling Service gestoppt');
   }
 
+  /// Neustarten des Polling-Services (bei App-Resume nützlich)
+  static void restartPolling() {
+    if (_isRunning) {
+      stopPolling();
+    }
+    startPolling();
+  }
+
   /// Prüft den aktuellen Space-Status und sendet Benachrichtigungen bei Änderungen
   static Future<void> _checkSpaceStatus() async {
     try {
-      log('Überprüfe Space-Status...');
+      if (kDebugMode) {
+        log('Überprüfe Space-Status (Debug-Modus: team-tfm.com endpoints)...');
+      } else {
+        log('Überprüfe Space-Status...');
+      }
 
       // Aktuellen Status abrufen
       final response = await _spaceApiService.getSpaceStatus();
       String? openUntil;
+
+      // Prüfen ob sich der Status geändert hat
+      bool statusChanged = false;
+      bool statusChangedToOpen = false;
+
+      if (_lastResponse != null) {
+        statusChanged = _lastResponse!.state.open != response.state.open;
+        statusChangedToOpen = !_lastResponse!.state.open && response.state.open;
+      }
+
+      // Wenn Space von geschlossen auf offen wechselt, openUntil-Daten zurücksetzen
+      if (statusChangedToOpen) {
+        _lastOpenUntil = null;
+        log('Space Status wechselte zu OPEN - OpenUntil-Daten zurückgesetzt');
+      }
 
       // OpenUntil-Zeit abrufen wenn der Space offen ist
       if (response.state.open) {
@@ -61,14 +115,8 @@ class BackgroundPollingService {
         }
       }
 
-      // Prüfen ob sich der Status geändert hat
-      bool statusChanged = false;
-      bool openUntilChanged = false;
-
-      if (_lastResponse != null) {
-        statusChanged = _lastResponse!.state.open != response.state.open;
-        openUntilChanged = _lastOpenUntil != openUntil;
-      }
+      // OpenUntil-Änderung prüfen (nach möglichem Reset)
+      bool openUntilChanged = _lastOpenUntil != openUntil;
 
       // Bei Statusänderung Benachrichtigung senden
       if (statusChanged &&
@@ -82,10 +130,11 @@ class BackgroundPollingService {
         log('Status-Benachrichtigung gesendet: $status');
       }
 
-      // Bei OpenUntil-Änderung Benachrichtigung senden (nur wenn offen)
+      // Bei OpenUntil-Änderung Benachrichtigung senden (nur wenn offen und nicht bei Status-Wechsel zu offen)
       if (openUntilChanged &&
           response.state.open &&
           openUntil != null &&
+          !statusChangedToOpen &&
           _getOpenUntilChangedTitle != null &&
           _getOpenUntilChangedBody != null) {
         await NotificationService.showStatusChangeNotification(
@@ -95,9 +144,28 @@ class BackgroundPollingService {
         log('OpenUntil-Benachrichtigung gesendet: $openUntil');
       }
 
+      // Spezielle OpenUntil-Benachrichtigung beim ersten Öffnen (wenn Zeit verfügbar ist)
+      if (statusChangedToOpen &&
+          openUntil != null &&
+          _getOpenUntilChangedTitle != null &&
+          _getOpenUntilChangedBody != null) {
+        await NotificationService.showStatusChangeNotification(
+          title: _getOpenUntilChangedTitle!(),
+          body: _getOpenUntilChangedBody!(openUntil),
+        );
+        log('Erste OpenUntil-Benachrichtigung beim Öffnen gesendet: $openUntil');
+      }
+
       // Aktuellen Status speichern
       _lastResponse = response;
       _lastOpenUntil = openUntil;
+
+      // Status-Update über Stream senden (für UI-Updates)
+      _statusUpdateController.add(SpaceStatusUpdate(
+        spaceData: response,
+        openUntil: openUntil,
+        timestamp: DateTime.now(),
+      ));
 
       log('Status-Check abgeschlossen: ${response.state.open ? "offen" : "geschlossen"}');
     } catch (e) {
@@ -118,6 +186,12 @@ class BackgroundPollingService {
     stopPolling();
     _lastResponse = null;
     _lastOpenUntil = null;
+  }
+
+  /// Ressourcen freigeben (sollte nur beim App-Shutdown aufgerufen werden)
+  static void dispose() {
+    stopPolling();
+    _statusUpdateController.close();
   }
 
   /// Setzt die Lokalisierungs-Callbacks für Benachrichtigungen

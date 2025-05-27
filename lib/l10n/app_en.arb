@@ -56,11 +56,11 @@
   "@showLocationInOpenStreetMap": {
     "description": "Location link description"
   },
-  "open": "open",
+  "open": "Open",
   "@open": {
     "description": "Space is open status"
   },
-  "closed": "closed",
+  "closed": "Closed",
   "@closed": {
     "description": "Space is closed status"
   },
