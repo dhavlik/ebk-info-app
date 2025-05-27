@@ -168,7 +168,7 @@ class BackgroundTaskService {
         log('Android WorkManager task cancelled');
 
         // Disable flutter_background if it was enabled
-        if (await FlutterBackground.isBackgroundExecutionEnabled) {
+        if (FlutterBackground.isBackgroundExecutionEnabled) {
           await FlutterBackground.disableBackgroundExecution();
           log('Background execution disabled');
         }
