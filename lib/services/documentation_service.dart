@@ -566,17 +566,14 @@ $content
 
     // Group items by type and priority
     final namespaces = items.where((item) => item.isNamespace).toList();
-    final pages = items.where((item) => item.isPage).toList();
+    // Note: Pages are filtered out from top level - they only appear within categories
 
     // Sort namespaces by priority
     namespaces.sort((a, b) =>
         _getNamespacePriority(a.id).compareTo(_getNamespacePriority(b.id)));
 
-    // Add namespaces first
+    // Add only namespaces to top level (no standalone pages)
     organized.addAll(namespaces);
-
-    // Add standalone pages
-    organized.addAll(pages);
 
     return organized;
   }

@@ -78,30 +78,6 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
     }
   }
 
-  Future<void> _openExternalUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.errorOpeningLink),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.errorOpeningLink),
-          ),
-        );
-      }
-    }
-  }
-
   Future<void> _toggleCategory(DocumentationItem item) async {
     if (!item.isNamespace) return;
 
@@ -224,12 +200,6 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
               item.title,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: Text(
-              l10n.category,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             trailing: isLoading
@@ -498,8 +468,10 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Documentation categories
-          ..._documentationItems!.map((item) => _buildCategoryCard(item)),
+          // Documentation categories (only show namespaces, not individual pages)
+          ..._documentationItems!
+              .where((item) => item.isNamespace)
+              .map((item) => _buildCategoryCard(item)),
         ],
       ),
     );
