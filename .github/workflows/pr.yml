@@ -38,103 +38,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Check and apply dart format
-        id: format-check
-        run: |
-          # Apply dart format
-          dart format .
-
-          # Check if there are any changes
-          if ! git diff --quiet; then
-            echo "🔧 Formatting changes detected"
-            echo "needs_formatting=true" >> $GITHUB_OUTPUT
-
-            # If this is the main branch, try to auto-commit
-            if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
-              echo "📝 Attempting to commit formatting fixes to main branch..."
-              git config --local user.email "action@github.com"
-              git config --local user.name "GitHub Action"
-              git add .
-              git commit -m "🎨 Auto-fix: Apply dart format [skip ci]"
-
-              # Try to push, but don't fail if it doesn't work
-              if git push; then
-                echo "✅ Successfully committed formatting fixes"
-                echo "committed=true" >> $GITHUB_OUTPUT
-              else
-                echo "⚠️ Could not push directly, will create PR instead"
-                echo "committed=false" >> $GITHUB_OUTPUT
-              fi
-            else
-              echo "📋 Not main branch or not a push event, skipping auto-commit"
-              echo "committed=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "✅ No formatting changes needed"
-            echo "needs_formatting=false" >> $GITHUB_OUTPUT
-            echo "committed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate formatting diff
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        id: formatting-diff
-        run: |
-          # Generate a detailed diff of formatting changes
-          echo "## 🎨 Code Formatting Suggestions" > formatting_comment.md
-          echo "" >> formatting_comment.md
-          echo "The following files need formatting adjustments to follow Dart style guidelines:" >> formatting_comment.md
-          echo "" >> formatting_comment.md
-
-          # List changed files
-          echo "### Files that need formatting:" >> formatting_comment.md
-          git diff --name-only >> formatting_comment.md
-          echo "" >> formatting_comment.md
-
-          echo "### Formatting changes:" >> formatting_comment.md
-          echo '```diff' >> formatting_comment.md
-          git diff >> formatting_comment.md
-          echo '```' >> formatting_comment.md
-          echo "" >> formatting_comment.md
-
-          echo "### How to apply these changes:" >> formatting_comment.md
-          echo "Run the following command in your local repository:" >> formatting_comment.md
-          echo '```bash' >> formatting_comment.md
-          echo 'dart format .' >> formatting_comment.md
-          echo '```' >> formatting_comment.md
-          echo "" >> formatting_comment.md
-          echo "_This comment was generated automatically by GitHub Actions._" >> formatting_comment.md
-
-      - name: Comment on PR with formatting suggestions
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const commentBody = fs.readFileSync('formatting_comment.md', 'utf8');
-
-            // Only comment on pull requests
-            if (context.eventName === 'pull_request') {
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: commentBody
-              });
-
-              console.log('✅ Posted formatting suggestions as PR comment');
-            } else {
-              console.log('ℹ️ Not a pull request event, skipping comment');
-            }
-
-      - name: Reset formatting changes for further testing
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        run: |
-          # Reset the formatting changes so tests run on original code
-          git checkout .
-          echo "⚠️ Code formatting is required. Please run 'dart format .' locally."
-          echo "📋 A comment with formatting suggestions has been posted on the PR."
-
       - name: Analyze project source
         run: flutter analyze
 
@@ -149,6 +52,9 @@ jobs:
     name: Build Android
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: write
+      pages: write
 
     steps:
       - name: Checkout code
@@ -173,12 +79,22 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Prepare APK for upload
+        run: |
+          mkdir -p apk-upload
+          cp build/app/outputs/flutter-apk/app-release.apk apk-upload/ebk-app-pr-${{ github.event.number }}.apk
+          # Copy the index.html if it exists for a nice landing page
+          if [ -f "docs/index.html" ]; then
+            cp docs/index.html apk-upload/
+          fi
+
+      - name: Deploy APK to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: android-apk-pr-${{ github.event.number }}
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: apk-upload
+          destination_dir: apks/pr-${{ github.event.number }}
+          keep_files: true
 
   build-web:
     name: Build Web
@@ -209,43 +125,40 @@ jobs:
           path: build/web/
           retention-days: 30
 
-  comment-artifacts:
-    name: Comment APK Link
+  comment-apk-link:
+    name: Comment APK Download Link
     runs-on: ubuntu-latest
-    needs: [build-android, build-web]
+    needs: build-android
     if: github.event_name == 'pull_request'
     permissions:
       pull-requests: write
 
     steps:
-      - name: Comment on PR with build artifacts
+      - name: Comment on PR with APK download link
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.issue.number;
-            const runId = context.runId;
             const repo = context.repo;
 
-            const commentBody = `## 📱 Build Artifacts Ready!
+            // Construct the GitHub Pages URL for the APK
+            const apkUrl = `https://${repo.owner}.github.io/${repo.repo}/apks/pr-${prNumber}/ebk-app-pr-${prNumber}.apk`;
 
-            Your pull request has been built successfully! You can download the artifacts below:
+            const commentBody = `## 📱 Android APK Ready for Testing!
 
-            ### Android APK
-            🤖 **Android APK**: [Download APK](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}/artifacts)
+            Your pull request has been built successfully! You can download and test the APK directly:
 
-            ### Web Build
-            🌐 **Web Build**: [Download Web Build](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}/artifacts)
+            ### 🤖 Direct APK Download
+            **[📲 Download APK](${apkUrl})**
 
-            ---
+            ### How to install:
+            1. Click the download link above
+            2. Allow downloads from unknown sources in your Android settings
+            3. Install the APK file
+            4. Test the changes in this PR
 
-            **How to download:**
-            1. Click on the artifact links above
-            2. Find the \`android-apk-pr-${prNumber}\` or \`web-build\` artifact
-            3. Click to download the ZIP file
-            4. Extract and install/use the build
-
-            **Note:** Artifacts are available for 30 days and require GitHub login to download.
+            **Note:** This APK will be available as long as the PR exists.
 
             _This comment was automatically generated by GitHub Actions._`;
 
@@ -258,7 +171,7 @@ jobs:
 
             const existingComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              comment.body.includes('Build Artifacts Ready!')
+              comment.body.includes('Android APK Ready for Testing!')
             );
 
             if (existingComment) {
@@ -269,7 +182,7 @@ jobs:
                 comment_id: existingComment.id,
                 body: commentBody
               });
-              console.log('✅ Updated existing build artifacts comment');
+              console.log('✅ Updated existing APK download comment');
             } else {
               // Create new comment
               await github.rest.issues.createComment({
@@ -278,5 +191,5 @@ jobs:
                 issue_number: prNumber,
                 body: commentBody
               });
-              console.log('✅ Posted new build artifacts comment');
+              console.log('✅ Posted new APK download comment');
             }
