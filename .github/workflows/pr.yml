@@ -111,13 +111,9 @@ jobs:
     if: github.event_name == 'pull_request'
 
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Download APK artifact
@@ -172,8 +168,8 @@ jobs:
           <body>
               <h1>EBK App - Pull Request Builds</h1>
               <div class="info">
-                  <p><strong>Web Apps:</strong> Available at <code>/ebk-info-app-prs/&lt;pr-number&gt;/</code></p>
-                  <p><strong>APK Downloads:</strong> Available at <code>/ebk-info-app-apks/&lt;pr-number&gt;.apk</code></p>
+                  <p><strong>Web Apps:</strong> Available at <code>/dev/ebk-info-app-prs/&lt;pr-number&gt;/</code></p>
+                  <p><strong>APK Downloads:</strong> Available at <code>/dev/ebk-info-app-apks/&lt;pr-number&gt;.apk</code></p>
               </div>
               <p>This page hosts builds for pull requests. Check your PR comments for direct links to your builds.</p>
           </body>
@@ -186,17 +182,14 @@ jobs:
           echo "=== Total files in deployment ==="
           find pages-deployment -type f | wc -l
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./pages-deployment
-
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./pages-deployment
+          destination_dir: dev
+          keep_files: true
+          force_orphan: false
 
   comment-on-pr:
     name: Comment Build Links
