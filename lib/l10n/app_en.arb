@@ -223,5 +223,41 @@
   "couldNotAddToCalendar": "Could not add to calendar",
   "@couldNotAddToCalendar": {
     "description": "Error message when adding to calendar fails"
+  },
+  "documentation": "Documentation",
+  "@documentation": {
+    "description": "Documentation link title"
+  },
+  "documentationDescription": "Information about areas, tools, machines and more",
+  "@documentationDescription": {
+    "description": "Documentation link description"
+  },
+  "errorLoadingData": "Error Loading Data",
+  "@errorLoadingData": {
+    "description": "Error message when data fails to load"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  "errorOpeningLink": "Could not open link",
+  "@errorOpeningLink": {
+    "description": "Error message when link cannot be opened"
+  },
+  "category": "Category",
+  "@category": {
+    "description": "Label for documentation category"
+  },
+  "subcategory": "Subcategory",
+  "@subcategory": {
+    "description": "Label for documentation subcategory"
+  },
+  "overview": "Overview",
+  "@overview": {
+    "description": "Label for documentation overview"
+  },
+  "page": "Page",
+  "@page": {
+    "description": "Label for documentation page"
   }
 }

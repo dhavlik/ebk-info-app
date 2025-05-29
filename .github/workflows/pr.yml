@@ -9,18 +9,10 @@ jobs:
   test:
     name: Test & Analyze
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: read
-      checks: write
-      pull-requests: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -38,103 +30,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Check and apply dart format
-        id: format-check
-        run: |
-          # Apply dart format
-          dart format .
-
-          # Check if there are any changes
-          if ! git diff --quiet; then
-            echo "🔧 Formatting changes detected"
-            echo "needs_formatting=true" >> $GITHUB_OUTPUT
-
-            # If this is the main branch, try to auto-commit
-            if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
-              echo "📝 Attempting to commit formatting fixes to main branch..."
-              git config --local user.email "action@github.com"
-              git config --local user.name "GitHub Action"
-              git add .
-              git commit -m "🎨 Auto-fix: Apply dart format [skip ci]"
-
-              # Try to push, but don't fail if it doesn't work
-              if git push; then
-                echo "✅ Successfully committed formatting fixes"
-                echo "committed=true" >> $GITHUB_OUTPUT
-              else
-                echo "⚠️ Could not push directly, will create PR instead"
-                echo "committed=false" >> $GITHUB_OUTPUT
-              fi
-            else
-              echo "📋 Not main branch or not a push event, skipping auto-commit"
-              echo "committed=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "✅ No formatting changes needed"
-            echo "needs_formatting=false" >> $GITHUB_OUTPUT
-            echo "committed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate formatting diff
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        id: formatting-diff
-        run: |
-          # Generate a detailed diff of formatting changes
-          echo "## 🎨 Code Formatting Suggestions" > formatting_comment.md
-          echo "" >> formatting_comment.md
-          echo "The following files need formatting adjustments to follow Dart style guidelines:" >> formatting_comment.md
-          echo "" >> formatting_comment.md
-
-          # List changed files
-          echo "### Files that need formatting:" >> formatting_comment.md
-          git diff --name-only >> formatting_comment.md
-          echo "" >> formatting_comment.md
-
-          echo "### Formatting changes:" >> formatting_comment.md
-          echo '```diff' >> formatting_comment.md
-          git diff >> formatting_comment.md
-          echo '```' >> formatting_comment.md
-          echo "" >> formatting_comment.md
-
-          echo "### How to apply these changes:" >> formatting_comment.md
-          echo "Run the following command in your local repository:" >> formatting_comment.md
-          echo '```bash' >> formatting_comment.md
-          echo 'dart format .' >> formatting_comment.md
-          echo '```' >> formatting_comment.md
-          echo "" >> formatting_comment.md
-          echo "_This comment was generated automatically by GitHub Actions._" >> formatting_comment.md
-
-      - name: Comment on PR with formatting suggestions
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const commentBody = fs.readFileSync('formatting_comment.md', 'utf8');
-
-            // Only comment on pull requests
-            if (context.eventName === 'pull_request') {
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: commentBody
-              });
-
-              console.log('✅ Posted formatting suggestions as PR comment');
-            } else {
-              console.log('ℹ️ Not a pull request event, skipping comment');
-            }
-
-      - name: Reset formatting changes for further testing
-        if: steps.format-check.outputs.needs_formatting == 'true' && steps.format-check.outputs.committed == 'false'
-        run: |
-          # Reset the formatting changes so tests run on original code
-          git checkout .
-          echo "⚠️ Code formatting is required. Please run 'dart format .' locally."
-          echo "📋 A comment with formatting suggestions has been posted on the PR."
-
       - name: Analyze project source
         run: flutter analyze
 
@@ -146,7 +41,7 @@ jobs:
             --dart-define=FLUTTER_TEST_INTEGRATION_DISABLED=true
 
   build-android:
-    name: Build Android
+    name: Build Android APK
     runs-on: ubuntu-latest
     needs: test
 
@@ -173,7 +68,7 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
@@ -181,7 +76,7 @@ jobs:
           retention-days: 30
 
   build-web:
-    name: Build Web
+    name: Build Web App
     runs-on: ubuntu-latest
     needs: test
 
@@ -200,11 +95,196 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: flutter build web --release --base-href="/ebk-info-app/"
+        run: flutter build web --release --base-href="/ebk-info-app/dev/ebk-info-app-prs/${{ github.event.number }}/"
 
-      - name: Upload Web artifact
+      - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: build/web/
           retention-days: 30
+
+  deploy-to-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [build-android, build-web]
+    if: github.event_name == 'pull_request'
+
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./apk-download
+
+      - name: Download web build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./web-download
+
+      - name: Prepare GitHub Pages deployment
+        run: |
+          echo "=== Preparing GitHub Pages deployment structure ==="
+
+          # Create the deployment structure
+          mkdir -p pages-deployment/ebk-info-app-prs/${{ github.event.number }}
+          mkdir -p pages-deployment/ebk-info-app-apks
+
+          # Copy web build to the PR-specific directory (avoid hidden files issue)
+          if [ -d "./web-download" ] && [ "$(ls -A ./web-download)" ]; then
+            cp -r ./web-download/* pages-deployment/ebk-info-app-prs/${{ github.event.number }}/
+            echo "Web files copied successfully"
+          else
+            echo "ERROR: web-download directory is empty or doesn't exist"
+            exit 1
+          fi
+
+          # Copy APK to the APK directory with PR number in filename
+          if [ -f "./apk-download/app-release.apk" ]; then
+            cp ./apk-download/app-release.apk pages-deployment/ebk-info-app-apks/${{ github.event.number }}.apk
+            echo "APK copied successfully"
+          else
+            echo "ERROR: APK file not found"
+            exit 1
+          fi
+
+          # Create .nojekyll file to prevent Jekyll processing
+          touch pages-deployment/.nojekyll
+
+          # Copy docs landing page to root if it exists
+          if [ -f "docs/index.html" ]; then
+            echo "Copying docs/index.html to deployment root"
+            cp docs/index.html pages-deployment/
+          fi
+
+          # Create a simple index.html if it doesn't exist
+          if [ ! -f "pages-deployment/index.html" ]; then
+            echo "Creating minimal root index.html"
+            cat > pages-deployment/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>EBK App - PR Builds</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  h1 { color: #333; }
+                  p { color: #666; }
+                  .info { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+              </style>
+          </head>
+          <body>
+              <h1>EBK App - PR Builds</h1>
+              <div class="info">
+                  <p><strong>Web Apps:</strong> Available at <code>/ebk-info-app/dev/ebk-info-app-prs/&lt;pr-number&gt;/</code></p>
+                  <p><strong>APK Downloads:</strong> Available at <code>/ebk-info-app/dev/ebk-info-app-apks/&lt;pr-number&gt;.apk</code></p>
+              </div>
+              <p>This page hosts builds for pull requests. Check your PR comments for direct links to your builds.</p>
+          </body>
+          </html>
+          EOF
+          fi
+
+          echo "=== Final deployment structure ==="
+          find pages-deployment -type f -exec ls -la {} \;
+          echo "=== Total files in deployment ==="
+          find pages-deployment -type f | wc -l
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./pages-deployment
+          destination_dir: dev
+          keep_files: true
+          force_orphan: false
+
+  comment-on-pr:
+    name: Comment Build Links
+    runs-on: ubuntu-latest
+    needs: [deploy-to-pages]
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Comment on PR with GitHub Pages links
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.issue.number;
+            const repo = context.repo;
+
+            console.log(`Repository: ${repo.owner}/${repo.repo}`);
+            console.log(`PR Number: ${prNumber}`);
+
+            // Construct the GitHub Pages URLs
+            const webUrl = `https://${repo.owner}.github.io/ebk-info-app/dev/ebk-info-app-prs/${prNumber}/`;
+            const apkUrl = `https://${repo.owner}.github.io/ebk-info-app/dev/ebk-info-app-apks/${prNumber}.apk`;
+
+            console.log(`Web URL: ${webUrl}`);
+            console.log(`APK URL: ${apkUrl}`);
+
+            const commentBody = `## 🚀 Build Artifacts Ready for Testing!
+
+            Your pull request has been built successfully! You can test the changes directly:
+
+            ### 🌐 Web App
+            **[🔗 Open Web App](${webUrl})**
+
+            Test the changes directly in your browser - works on desktop and mobile!
+
+            ### 📱 Android APK
+            **[📲 Download APK](${apkUrl})**
+
+            **Installation steps:**
+            1. Click the download link above
+            2. Allow downloads from unknown sources in your Android settings if prompted
+            3. Install the APK file
+            4. Test the changes on your Android device
+
+            ---
+
+            **Note:** Both builds will be available as long as this PR exists and will be automatically cleaned up when the PR is closed.
+
+            _This comment was automatically generated by GitHub Actions._`;
+
+            // Check if we already commented on this PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: repo.owner,
+              repo: repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existingComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Build Artifacts Ready for Testing!')
+            );
+
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                comment_id: existingComment.id,
+                body: commentBody
+              });
+              console.log('✅ Updated existing build links comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                issue_number: prNumber,
+                body: commentBody
+              });
+              console.log('✅ Posted new build links comment');
+            }

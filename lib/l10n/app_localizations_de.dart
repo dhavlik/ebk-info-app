@@ -152,4 +152,32 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get couldNotAddToCalendar => 'Fehler beim Hinzufügen zum Kalender';
+
+  @override
+  String get documentation => 'Dokumentation';
+
+  @override
+  String get documentationDescription =>
+      'Informationen über Bereiche, Werkzeuge, Maschinen und mehr';
+
+  @override
+  String get errorLoadingData => 'Fehler beim Laden der Daten';
+
+  @override
+  String get retry => 'Wiederholen';
+
+  @override
+  String get errorOpeningLink => 'Link konnte nicht geöffnet werden';
+
+  @override
+  String get category => 'Kategorie';
+
+  @override
+  String get subcategory => 'Inhalte';
+
+  @override
+  String get overview => 'Übersicht';
+
+  @override
+  String get page => 'Seite';
 }

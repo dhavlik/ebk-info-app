@@ -33,6 +33,12 @@ A Flutter mobile and web application for the **Eigenbaukombinat (EBK)** hackersp
 - **Location integration** - view EBK's location on OpenStreetMap
 - **Social media links** for staying connected
 
+### 📚 Documentation Browser
+- **Integrated wiki access** - Browse EBK documentation directly in the app
+- **Streamlined navigation** - Simple two-level structure (categories → pages)
+- **External browser integration** - Documentation opens in your default browser for full functionality
+- **Organized content** - Easy access to how-tos, guides, and EBK information
+‚
 ### 🌐 Full Internationalization
 - **Bilingual support** - German and English
 - **Automatic language detection** based on device settings
@@ -92,6 +98,12 @@ The app integrates with existing EBK services through these endpoints:
   - Provides upcoming events in JSON format
   - Returns event details including title, description, date/time, and URLs
   - Supports both regular timed events and all-day events
+
+### Documentation Integration
+- **`https://wiki.eigenbaukombinat.de/`** - EBK Wiki/Documentation
+  - Integrated documentation browser for accessing guides and how-tos
+  - Parses wiki structure to provide streamlined navigation
+  - Opens content in external browser for full wiki functionality
 
 ## How This Code Was Actually Made
 

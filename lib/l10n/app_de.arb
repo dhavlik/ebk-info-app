@@ -13,6 +13,8 @@
   "sendEmail": "E-Mail schreiben",
   "officialLinkCollection": "Offizielle Linksammlung",
   "linkCollectionDescription": "Sammlung wichtiger EBK-Links",
+  "documentation": "Dokumentation",
+  "documentationDescription": "Informationen über Bereiche, Werkzeuge, Maschinen und mehr",
   "showLocationInOpenStreetMap": "Standort in OpenStreetMap anzeigen",
   "open": "offen",
   "closed": "geschlossen",
@@ -42,5 +44,12 @@
   "addToCalendar": "Zum Kalender hinzufügen",
   "eventDetails": "Veranstaltungsdetails",
   "eventAddedToCalendar": "Termin heruntergeladen",
-  "couldNotAddToCalendar": "Fehler beim Hinzufügen zum Kalender"
+  "couldNotAddToCalendar": "Fehler beim Hinzufügen zum Kalender",
+  "errorLoadingData": "Fehler beim Laden der Daten",
+  "retry": "Wiederholen",
+  "errorOpeningLink": "Link konnte nicht geöffnet werden",
+  "category": "Kategorie",
+  "subcategory": "Inhalte",
+  "overview": "Übersicht",
+  "page": "Seite"
 }
