@@ -167,4 +167,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorOpeningLink => 'Could not open link';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get subcategory => 'Subcategory';
+
+  @override
+  String get page => 'Page';
 }

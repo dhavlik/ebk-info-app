@@ -4,6 +4,8 @@ class DocumentationItem {
   final String url;
   final DocumentationItemType type;
   final List<DocumentationItem> children;
+  final bool isExpanded;
+  final bool isLoading;
 
   const DocumentationItem({
     required this.id,
@@ -11,6 +13,8 @@ class DocumentationItem {
     required this.url,
     required this.type,
     this.children = const [],
+    this.isExpanded = false,
+    this.isLoading = false,
   });
 
   factory DocumentationItem.fromDokuWikiEntry(String entry) {
@@ -78,6 +82,8 @@ class DocumentationItem {
     required String url,
     required DocumentationItemType type,
     List<DocumentationItem> children = const [],
+    bool isExpanded = false,
+    bool isLoading = false,
   }) {
     return DocumentationItem(
       id: id,
@@ -85,6 +91,8 @@ class DocumentationItem {
       url: url,
       type: type,
       children: children,
+      isExpanded: isExpanded,
+      isLoading: isLoading,
     );
   }
 
@@ -129,6 +137,28 @@ class DocumentationItem {
 
   bool get isNamespace => type == DocumentationItemType.namespace;
   bool get isPage => type == DocumentationItemType.page;
+  bool get hasChildren => children.isNotEmpty;
+
+  /// Creates a copy of this DocumentationItem with updated properties
+  DocumentationItem copyWith({
+    String? id,
+    String? title,
+    String? url,
+    DocumentationItemType? type,
+    List<DocumentationItem>? children,
+    bool? isExpanded,
+    bool? isLoading,
+  }) {
+    return DocumentationItem(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      url: url ?? this.url,
+      type: type ?? this.type,
+      children: children ?? this.children,
+      isExpanded: isExpanded ?? this.isExpanded,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
 }
 
 enum DocumentationItemType {

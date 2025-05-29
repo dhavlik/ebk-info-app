@@ -47,5 +47,8 @@
   "couldNotAddToCalendar": "Fehler beim Hinzufügen zum Kalender",
   "errorLoadingData": "Fehler beim Laden der Daten",
   "retry": "Wiederholen",
-  "errorOpeningLink": "Link konnte nicht geöffnet werden"
+  "errorOpeningLink": "Link konnte nicht geöffnet werden",
+  "category": "Kategorie",
+  "subcategory": "Unterkategorie",
+  "page": "Seite"
 }

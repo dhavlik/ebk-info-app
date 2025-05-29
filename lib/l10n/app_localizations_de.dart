@@ -168,4 +168,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorOpeningLink => 'Link konnte nicht geöffnet werden';
+
+  @override
+  String get category => 'Kategorie';
+
+  @override
+  String get subcategory => 'Unterkategorie';
+
+  @override
+  String get page => 'Seite';
 }

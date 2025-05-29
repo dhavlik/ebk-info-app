@@ -385,6 +385,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open link'**
   String get errorOpeningLink;
+
+  /// Label for documentation category
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// Label for documentation subcategory
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategory'**
+  String get subcategory;
+
+  /// Label for documentation page
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get page;
 }
 
 class _AppLocalizationsDelegate

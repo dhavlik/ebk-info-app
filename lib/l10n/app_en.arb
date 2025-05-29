@@ -243,5 +243,17 @@
   "errorOpeningLink": "Could not open link",
   "@errorOpeningLink": {
     "description": "Error message when link cannot be opened"
+  },
+  "category": "Category",
+  "@category": {
+    "description": "Label for documentation category"
+  },
+  "subcategory": "Subcategory",
+  "@subcategory": {
+    "description": "Label for documentation subcategory"
+  },
+  "page": "Page",
+  "@page": {
+    "description": "Label for documentation page"
   }
 }
