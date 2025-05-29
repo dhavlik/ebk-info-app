@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Closed'**
   String get closed;
 
+  /// Label text for open until time display
+  ///
+  /// In en, this message translates to:
+  /// **'Open until'**
+  String get openUntilLabel;
+
   /// Space is open until specific time
   ///
   /// In en, this message translates to:

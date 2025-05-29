@@ -58,6 +58,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get closed => 'geschlossen';
 
   @override
+  String get openUntilLabel => 'Geöffnet bis';
+
+  @override
   String openUntil(String time) {
     return 'Geöffnet bis: $time';
   }

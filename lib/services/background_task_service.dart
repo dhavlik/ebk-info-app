@@ -49,6 +49,9 @@ class BackgroundTaskService {
   static String Function()? _getOpenUntilAndStatusChangedTitle;
   static String Function(String time, String status)?
       _getOpenUntilAndStatusChangedBody;
+  // Callback functions for localized status strings
+  static String Function()? _getOpenStatus;
+  static String Function()? _getClosedStatus;
 
   /// Initialize WorkManager and background tasks
   static Future<void> initialize() async {
@@ -172,7 +175,7 @@ class BackgroundTaskService {
         _taskName,
         frequency: kDebugMode
             ? const Duration(minutes: 15) // Minimum allowed by WorkManager
-            : const Duration(minutes: 15), // Production: check every hour
+            : const Duration(minutes: 15), // Production: check every 15 minutes
         constraints: Constraints(
           networkType: NetworkType.connected,
           requiresBatteryNotLow: false,
@@ -294,8 +297,11 @@ class BackgroundTaskService {
       if (statusChanged &&
           !openUntilChanged &&
           _getStatusChangedTitle != null &&
-          _getStatusChangedBody != null) {
-        final status = response.state.open ? 'OPEN' : 'CLOSED';
+          _getStatusChangedBody != null &&
+          _getOpenStatus != null &&
+          _getClosedStatus != null) {
+        final status =
+            response.state.open ? _getOpenStatus!() : _getClosedStatus!();
         await NotificationService.showStatusChangeNotification(
           title: _getStatusChangedTitle!(),
           body: _getStatusChangedBody!(status),
@@ -322,8 +328,11 @@ class BackgroundTaskService {
           response.state.open &&
           openUntil != null &&
           _getOpenUntilAndStatusChangedTitle != null &&
-          _getOpenUntilAndStatusChangedBody != null) {
-        final status = response.state.open ? 'OPEN' : 'CLOSED';
+          _getOpenUntilAndStatusChangedBody != null &&
+          _getOpenStatus != null &&
+          _getClosedStatus != null) {
+        final status =
+            response.state.open ? _getOpenStatus!() : _getClosedStatus!();
         await NotificationService.showStatusChangeNotification(
           title: _getOpenUntilAndStatusChangedTitle!(),
           body: _getOpenUntilAndStatusChangedBody!(openUntil, status),
@@ -346,6 +355,8 @@ class BackgroundTaskService {
     required String Function() getOpenUntilAndStatusChangedTitle,
     required String Function(String time, String status)
         getOpenUntilAndStatusChangedBody,
+    required String Function() getOpenStatus,
+    required String Function() getClosedStatus,
   }) {
     _getStatusChangedTitle = getStatusChangedTitle;
     _getStatusChangedBody = getStatusChangedBody;
@@ -353,6 +364,8 @@ class BackgroundTaskService {
     _getOpenUntilChangedBody = getOpenUntilChangedBody;
     _getOpenUntilAndStatusChangedTitle = getOpenUntilAndStatusChangedTitle;
     _getOpenUntilAndStatusChangedBody = getOpenUntilAndStatusChangedBody;
+    _getOpenStatus = getOpenStatus;
+    _getClosedStatus = getClosedStatus;
   }
 
   /// Reset internal state (for testing)

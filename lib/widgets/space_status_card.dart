@@ -233,7 +233,7 @@ class _SpaceStatusCardState extends State<SpaceStatusCard> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Open until ${_openUntilData!.closeTime}',
+                  '${l10n.openUntilLabel} ${_openUntilData!.closeTime}',
                   style: TextStyle(
                     fontSize: 14,
                     color: textIconColor,

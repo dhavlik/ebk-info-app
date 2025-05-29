@@ -16,6 +16,7 @@
   "showLocationInOpenStreetMap": "Standort in OpenStreetMap anzeigen",
   "open": "offen",
   "closed": "geschlossen",
+  "openUntilLabel": "Geöffnet bis",
   "openUntil": "Geöffnet bis: {time}",
   "eigenbaukombinat": "Eigenbaukombinat",
   "salzwedelGermany": "Salzwedel, Deutschland",

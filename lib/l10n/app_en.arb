@@ -64,6 +64,10 @@
   "@closed": {
     "description": "Space is closed status"
   },
+  "openUntilLabel": "Open until",
+  "@openUntilLabel": {
+    "description": "Label text for open until time display"
+  },
   "openUntil": "Open until: {time}",
   "@openUntil": {
     "description": "Space is open until specific time",

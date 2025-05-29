@@ -77,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             l10n.ebkOpenUntilAndStatusChanged,
         getOpenUntilAndStatusChangedBody: (time, status) =>
             l10n.openUntilAndStatus(time, status),
+        getOpenStatus: () => l10n.open,
+        getClosedStatus: () => l10n.closed,
       );
     }
   }
