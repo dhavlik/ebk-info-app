@@ -173,7 +173,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get category => 'Kategorie';
 
   @override
-  String get subcategory => 'Unterkategorie';
+  String get subcategory => 'Inhalte';
+
+  @override
+  String get overview => 'Übersicht';
 
   @override
   String get page => 'Seite';

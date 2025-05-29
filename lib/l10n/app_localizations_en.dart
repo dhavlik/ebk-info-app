@@ -175,5 +175,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subcategory => 'Subcategory';
 
   @override
+  String get overview => 'Overview';
+
+  @override
   String get page => 'Page';
 }

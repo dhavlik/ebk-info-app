@@ -145,6 +145,16 @@ class DocumentationService {
       }
 
       final result = _parseNamespaceHtml(response.body, namespace);
+
+      // Check if there's a root-level page with the same ID as this namespace
+      final rootLevelPage = await _findRootLevelPageForNamespace(namespace);
+      if (rootLevelPage != null) {
+        debugPrint(
+            'Found root-level page for namespace "$namespace": ${rootLevelPage.title}');
+        // Insert as first item
+        result.insert(0, rootLevelPage);
+      }
+
       debugPrint('Found ${result.length} items in namespace "$namespace"');
       debugPrint('=== END NAMESPACE CONTENT ===\n');
 
@@ -217,6 +227,11 @@ class DocumentationService {
       }
     }
 
+    // Create a set of subcategory IDs for quick lookup
+    final subcategoryIds =
+        items.where((item) => item.isNamespace).map((item) => item.id).toSet();
+    debugPrint('Subcategory IDs found: $subcategoryIds');
+
     // Find pages within this namespace
     final pageLinks = searchElement.querySelectorAll('a.wikilink1');
     debugPrint('Found ${pageLinks.length} pages');
@@ -246,6 +261,13 @@ class DocumentationService {
           continue;
         }
 
+        // Skip pages that have the same ID as a subcategory
+        if (subcategoryIds.contains(pageId)) {
+          debugPrint(
+              '✗ Skipping page "$pageId" because a subcategory with the same ID exists');
+          continue;
+        }
+
         if (_shouldIncludePage(pageId)) {
           debugPrint('✓ Including page: $pageId');
           final item = DocumentationItem.fromIndexHtml(
@@ -266,6 +288,66 @@ class DocumentationService {
 
     debugPrint('Total sub-items parsed for $namespace: ${items.length}');
     return items;
+  }
+
+  /// Looks for a root-level page that matches the namespace ID
+  Future<DocumentationItem?> _findRootLevelPageForNamespace(
+      String namespace) async {
+    try {
+      // Try to fetch the root index again to look for pages
+      final response = await _client.get(
+        Uri.parse('$_baseUrl$_indexEndpoint'),
+        headers: {'User-Agent': 'EBK-App/1.0'},
+      );
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      // Parse HTML using proper DOM parser
+      final document = html_parser.parse(response.body);
+      final indexList = document.querySelector('ul.idx');
+      if (indexList == null) {
+        return null;
+      }
+
+      // Find all page links
+      final pageLinks = indexList.querySelectorAll('a.wikilink1');
+      debugPrint(
+          'Looking for root-level page with ID "$namespace" in ${pageLinks.length} pages');
+
+      for (final link in pageLinks) {
+        final href = link.attributes['href'];
+        final wikiId = link.attributes['data-wiki-id'];
+        if (href == null || wikiId == null) continue;
+
+        // Extract page ID from href: /doku.php?id=pageid
+        final idMatch = RegExp(r'id=([^&]+)').firstMatch(href);
+        if (idMatch == null) continue;
+
+        final pageId = idMatch.group(1)!;
+        final title = link.text;
+
+        debugPrint('Checking root page: "$pageId" -> "$title"');
+
+        // Check if this page ID matches the namespace
+        if (pageId == namespace && _shouldIncludePage(pageId)) {
+          debugPrint('✓ Found matching root-level page: $pageId');
+          return DocumentationItem.fromIndexHtml(
+            id: wikiId,
+            title: title,
+            url: '$_baseUrl/doku.php?id=$pageId',
+            type: DocumentationItemType.page,
+          );
+        }
+      }
+
+      debugPrint('✗ No root-level page found for namespace "$namespace"');
+      return null;
+    } catch (e) {
+      debugPrint('Error looking for root-level page for "$namespace": $e');
+      return null;
+    }
   }
 
   /// Checks if a namespace also has a corresponding page and fetches its content
@@ -339,6 +421,9 @@ class DocumentationService {
             line-height: 1.6;
             margin: 16px;
             color: #333;
+            transform: scale(0.5);
+            transform-origin: top left;
+            width: 200%;
         }
         img {
             max-width: 100%;

@@ -49,6 +49,7 @@
   "retry": "Wiederholen",
   "errorOpeningLink": "Link konnte nicht geöffnet werden",
   "category": "Kategorie",
-  "subcategory": "Unterkategorie",
+  "subcategory": "Inhalte",
+  "overview": "Übersicht",
   "page": "Seite"
 }

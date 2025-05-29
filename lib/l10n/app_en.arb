@@ -252,6 +252,10 @@
   "@subcategory": {
     "description": "Label for documentation subcategory"
   },
+  "overview": "Overview",
+  "@overview": {
+    "description": "Label for documentation overview"
+  },
   "page": "Page",
   "@page": {
     "description": "Label for documentation page"

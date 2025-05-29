@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Subcategory'**
   String get subcategory;
 
+  /// Label for documentation overview
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get overview;
+
   /// Label for documentation page
   ///
   /// In en, this message translates to:
