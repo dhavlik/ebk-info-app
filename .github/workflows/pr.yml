@@ -136,11 +136,26 @@ jobs:
           mkdir -p pages-deployment/ebk-info-app-prs/${{ github.event.number }}
           mkdir -p pages-deployment/ebk-info-app-apks
 
-          # Copy web build to the PR-specific directory
-          cp -r ./web-download/* pages-deployment/ebk-info-app-prs/${{ github.event.number }}/
+          # Copy web build to the PR-specific directory (avoid hidden files issue)
+          if [ -d "./web-download" ] && [ "$(ls -A ./web-download)" ]; then
+            cp -r ./web-download/* pages-deployment/ebk-info-app-prs/${{ github.event.number }}/
+            echo "Web files copied successfully"
+          else
+            echo "ERROR: web-download directory is empty or doesn't exist"
+            exit 1
+          fi
 
           # Copy APK to the APK directory with PR number in filename
-          cp ./apk-download/app-release.apk pages-deployment/ebk-info-app-apks/${{ github.event.number }}.apk
+          if [ -f "./apk-download/app-release.apk" ]; then
+            cp ./apk-download/app-release.apk pages-deployment/ebk-info-app-apks/${{ github.event.number }}.apk
+            echo "APK copied successfully"
+          else
+            echo "ERROR: APK file not found"
+            exit 1
+          fi
+
+          # Create .nojekyll file to prevent Jekyll processing
+          touch pages-deployment/.nojekyll
 
           # Copy docs landing page to root if it exists
           if [ -f "docs/index.html" ]; then
@@ -166,7 +181,7 @@ jobs:
               </style>
           </head>
           <body>
-              <h1>EBK App - Pull Request Builds</h1>
+              <h1>EBK App - PR Builds</h1>
               <div class="info">
                   <p><strong>Web Apps:</strong> Available at <code>/dev/ebk-info-app-prs/&lt;pr-number&gt;/</code></p>
                   <p><strong>APK Downloads:</strong> Available at <code>/dev/ebk-info-app-apks/&lt;pr-number&gt;.apk</code></p>
