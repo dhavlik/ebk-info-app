@@ -7,8 +7,22 @@ import '../models/space_api_response.dart';
 import 'space_api_service.dart';
 import 'notification_service.dart';
 
+/// Klasse für Status-Updates, die über den Stream gesendet werden
+class SpaceStatusUpdate {
+  final SpaceApiResponse spaceData;
+  final String? openUntil;
+  final DateTime timestamp;
+
+  SpaceStatusUpdate({
+    required this.spaceData,
+    this.openUntil,
+    required this.timestamp,
+  });
+}
+
 /// Background task service for reliable background processing
 /// Uses WorkManager for Android and periodic tasks for other platforms
+/// Also provides a stream for UI updates
 class BackgroundTaskService {
   static const String _taskName = "space_status_check";
   static const String _uniqueTaskName = "space_status_periodic_check";
@@ -18,6 +32,14 @@ class BackgroundTaskService {
   static Timer? _timer;
   static bool _isInitialized = false;
   static bool _isRunning = false;
+
+  // Stream Controller für Status-Updates
+  static final StreamController<SpaceStatusUpdate> _statusUpdateController =
+      StreamController<SpaceStatusUpdate>.broadcast();
+
+  /// Stream für Status-Updates - Widgets können darauf hören
+  static Stream<SpaceStatusUpdate> get statusUpdates =>
+      _statusUpdateController.stream;
 
   // Callback functions for localized strings
   static String Function()? _getStatusChangedTitle;
@@ -38,6 +60,46 @@ class BackgroundTaskService {
       log('BackgroundTaskService initialized successfully');
     } catch (e) {
       log('Failed to initialize BackgroundTaskService: $e');
+    }
+  }
+
+  /// Request background permissions explicitly (should be called on app startup)
+  static Future<bool> requestBackgroundPermissions() async {
+    log('🔍 Checking platform: ${defaultTargetPlatform.toString()}');
+
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      log('📱 Not Android platform, skipping background permission request');
+      return true; // Background permissions not needed on other platforms
+    }
+
+    try {
+      log('🚀 Requesting background execution permissions on Android...');
+
+      const androidConfig = FlutterBackgroundAndroidConfig(
+        notificationTitle: "EBK Status Monitor",
+        notificationText: "Monitoring space status in background",
+        notificationImportance: AndroidNotificationImportance.normal,
+        enableWifiLock: false,
+      );
+
+      log('⚙️ Calling FlutterBackground.initialize with config...');
+      // Initialize and request permissions
+      bool hasPermissions =
+          await FlutterBackground.initialize(androidConfig: androidConfig);
+
+      log('📋 FlutterBackground.initialize result: $hasPermissions');
+
+      if (hasPermissions) {
+        log('✅ Background execution permissions granted');
+        return true;
+      } else {
+        log('❌ Background execution permissions denied');
+        return false;
+      }
+    } catch (e) {
+      log('❌ Error requesting background permissions: $e');
+      log('❌ Stack trace: ${StackTrace.current}');
+      return false;
     }
   }
 
@@ -73,21 +135,14 @@ class BackgroundTaskService {
   /// Enable background execution using flutter_background
   static Future<void> _enableBackgroundExecution() async {
     try {
-      // Configure background execution with minimal configuration
-      const androidConfig = FlutterBackgroundAndroidConfig(
-        notificationTitle: "EBK Status Monitor",
-        notificationText: "Monitoring space status in background",
-      );
-
       bool hasPermissions = await FlutterBackground.hasPermissions;
 
       if (!hasPermissions) {
-        log('Requesting background execution permissions...');
-        hasPermissions =
-            await FlutterBackground.initialize(androidConfig: androidConfig);
+        log('Background permissions not available, skipping background execution');
+        return;
       }
 
-      if (hasPermissions) {
+      if (!FlutterBackground.isBackgroundExecutionEnabled) {
         bool success = await FlutterBackground.enableBackgroundExecution();
         if (success) {
           log('✅ Background execution enabled successfully');
@@ -95,7 +150,7 @@ class BackgroundTaskService {
           log('❌ Failed to enable background execution');
         }
       } else {
-        log('❌ Background execution permissions not granted');
+        log('Background execution already enabled');
       }
     } catch (e) {
       log('❌ Error enabling background execution: $e');
@@ -264,6 +319,13 @@ class BackgroundTaskService {
       _lastResponse = response;
       _lastOpenUntil = openUntil;
 
+      // Send update via stream for UI updates
+      _statusUpdateController.add(SpaceStatusUpdate(
+        spaceData: response,
+        openUntil: openUntil,
+        timestamp: DateTime.now(),
+      ));
+
       log('Status check completed: ${response.state.open ? "open" : "closed"}');
     } catch (e) {
       log('Error during status check: $e');
@@ -288,6 +350,11 @@ class BackgroundTaskService {
     stopBackgroundTasks();
     _lastResponse = null;
     _lastOpenUntil = null;
+  }
+
+  /// Clean up resources
+  static void dispose() {
+    _statusUpdateController.close();
   }
 
   /// Check if background tasks are running

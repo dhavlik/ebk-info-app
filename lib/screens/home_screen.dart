@@ -1,5 +1,7 @@
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background/flutter_background.dart';
 import '../models/event.dart';
 import '../services/event_service.dart';
 import '../services/background_task_service.dart';
@@ -58,6 +60,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _setupLocalizationCallbacks();
+
+    // Start background tasks after localization is ready
+    _startBackgroundTasksIfReady();
   }
 
   void _setupLocalizationCallbacks() {
@@ -69,6 +74,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         getOpenUntilChangedTitle: () => l10n.ebkOpeningTimeChanged,
         getOpenUntilChangedBody: (time) => l10n.openUntil(time),
       );
+    }
+  }
+
+  void _startBackgroundTasksIfReady() async {
+    try {
+      // Start background tasks now that localization callbacks are set
+      await BackgroundTaskService.startBackgroundTasks();
+      log('Background tasks started successfully from home screen');
+    } catch (e) {
+      log('Failed to start background tasks from home screen: $e');
     }
   }
 
@@ -132,104 +147,74 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadEvents();
   }
 
-  Widget _buildDebugPanel(AppLocalizations l10n) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
-        border: Border.all(color: Colors.orange),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.bug_report, color: Colors.orange),
-              const SizedBox(width: 8),
-              Text(
-                'Debug Panel',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await NotificationService.showTestNotification();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Test notification sent')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.notifications, size: 16),
-                label: const Text('Test Notification'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await BackgroundTaskService.checkNow();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Manual status check triggered')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Check Status'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              FutureBuilder<bool>(
-                future: _checkBackgroundStatus(),
-                builder: (context, snapshot) {
-                  final isEnabled = snapshot.data ?? false;
-                  return ElevatedButton.icon(
-                    onPressed: () async {
-                      if (isEnabled) {
-                        await BackgroundTaskService.stopBackgroundTasks();
-                      } else {
-                        await BackgroundTaskService.startBackgroundTasks();
-                      }
-                      setState(() {});
-                    },
-                    icon: Icon(
-                      isEnabled ? Icons.pause : Icons.play_arrow,
-                      size: 16,
-                    ),
-                    label: Text(isEnabled ? 'Stop BG' : 'Start BG'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isEnabled ? Colors.red : Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  Future<bool> _checkBackgroundPermissions() async {
+    try {
+      final hasNotifications =
+          await NotificationService.areNotificationsEnabled();
+      final hasBackground = await FlutterBackground.hasPermissions;
+      return hasNotifications && hasBackground;
+    } catch (e) {
+      return false;
+    }
   }
 
-  Future<bool> _checkBackgroundStatus() async {
-    // Check both WorkManager and flutter_background status
-    return BackgroundTaskService.isRunning;
+  Future<void> _requestBackgroundPermissions() async {
+    try {
+      // Request notification permissions
+      await NotificationService.requestPermissions();
+
+      // Request background permissions
+      await BackgroundTaskService.requestBackgroundPermissions();
+
+      // Restart background tasks with new permissions
+      await BackgroundTaskService.stopBackgroundTasks();
+      await BackgroundTaskService.startBackgroundTasks();
+
+      setState(() {}); // Refresh the permission warning
+    } catch (e) {
+      log('Error requesting permissions: $e');
+    }
+  }
+
+  Widget _buildPermissionWarning() {
+    return FutureBuilder<bool>(
+      future: _checkBackgroundPermissions(),
+      builder: (context, snapshot) {
+        if (snapshot.data == false) {
+          final l10n = AppLocalizations.of(context)!;
+          return Card(
+            margin: const EdgeInsets.all(16),
+            color: Colors.orange.withValues(alpha: 0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Icon(Icons.warning, color: Colors.orange),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Background notifications require additional permissions',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'To receive notifications when the app is closed, please enable background app refresh.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _requestBackgroundPermissions,
+                    child: Text(l10n.requestPermission),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
   }
 
   @override
@@ -300,6 +285,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ? const Center(child: CircularProgressIndicator())
             : CustomScrollView(
                 slivers: [
+                  // Permission warning (if needed)
+                  SliverToBoxAdapter(
+                    child: _buildPermissionWarning(),
+                  ),
+
                   // Space Status
                   const SliverToBoxAdapter(
                     child: SpaceStatusCard(),
@@ -376,43 +366,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                   ),
 
-                  // Important Links Section
-                  SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.link,
-                            size: 24,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.importantLinks,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(
-                                  color: Colors.grey[500],
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.linkCollectionDescription,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.grey[500],
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
                   // Events List
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -425,12 +378,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   const SliverToBoxAdapter(
                     child: ImportantLinksCard(),
                   ),
-
-                  // Debug Panel (only visible in debug mode)
-                  if (kDebugMode)
-                    SliverToBoxAdapter(
-                      child: _buildDebugPanel(l10n),
-                    ),
 
                   // Bottom Padding
                   const SliverToBoxAdapter(
