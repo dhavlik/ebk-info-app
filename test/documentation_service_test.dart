@@ -43,7 +43,9 @@ void main() {
       </li>
       <li class="level1">
         <div class="li">
-          <a href="/doku.php?id=howtos" class="wikilink1" data-wiki-id="howtos">How-Tos</a>
+          <a href="/doku.php?id=start&amp;idx=howtos" class="idx_dir">
+            <strong>How-Tos</strong>
+          </a>
         </div>
       </li>
       <li class="level1">
@@ -78,19 +80,20 @@ void main() {
         final geraeteItems = result.where((item) => item.id == 'geraete');
         expect(geraeteItems, isNotEmpty);
 
-        // Should include howtos page
+        // Should include howtos namespace (not as page anymore)
         final howtosItems = result.where((item) => item.id == 'howtos');
         expect(howtosItems, isNotEmpty);
+        // Verify it's treated as a namespace
+        final howtosItem = howtosItems.first;
+        expect(howtosItem.isNamespace, isTrue);
 
-        // Verify that namespaces come before pages (based on organization)
+        // Verify that only namespaces are returned at top level (no standalone pages)
         final namespaces = result.where((item) => item.isNamespace).toList();
         final pages = result.where((item) => item.isPage).toList();
 
-        if (namespaces.isNotEmpty && pages.isNotEmpty) {
-          final firstNamespaceIndex = result.indexOf(namespaces.first);
-          final firstPageIndex = result.indexOf(pages.first);
-          expect(firstNamespaceIndex, lessThan(firstPageIndex));
-        }
+        // All items should be namespaces
+        expect(result.length, equals(namespaces.length));
+        expect(pages, isEmpty);
       });
 
       test('should handle HTTP errors gracefully', () async {
