@@ -46,6 +46,9 @@ class BackgroundTaskService {
   static String Function(String status)? _getStatusChangedBody;
   static String Function()? _getOpenUntilChangedTitle;
   static String Function(String time)? _getOpenUntilChangedBody;
+  static String Function()? _getOpenUntilAndStatusChangedTitle;
+  static String Function(String time, String status)?
+      _getOpenUntilAndStatusChangedBody;
 
   /// Initialize WorkManager and background tasks
   static Future<void> initialize() async {
@@ -251,15 +254,14 @@ class BackgroundTaskService {
 
       // Check if status changed
       bool statusChanged = false;
-      bool statusChangedToOpen = false;
 
+      log('Space status: ${response.state.open ? "OPEN" : "CLOSED"}');
       if (_lastResponse != null) {
         statusChanged = _lastResponse!.state.open != response.state.open;
-        statusChangedToOpen = !_lastResponse!.state.open && response.state.open;
       }
 
-      // Reset openUntil data when space changes to open
-      if (statusChangedToOpen) {
+      // Reset openUntil data when space changes
+      if (statusChanged) {
         _lastOpenUntil = null;
         log('Space status changed to OPEN - OpenUntil data reset');
       }
@@ -277,44 +279,6 @@ class BackgroundTaskService {
       // Check for openUntil changes (after possible reset)
       bool openUntilChanged = _lastOpenUntil != openUntil;
 
-      // Send status change notification
-      if (statusChanged &&
-          _getStatusChangedTitle != null &&
-          _getStatusChangedBody != null) {
-        final status = response.state.open ? 'OPEN' : 'CLOSED';
-        await NotificationService.showStatusChangeNotification(
-          title: _getStatusChangedTitle!(),
-          body: _getStatusChangedBody!(status),
-        );
-        log('Status change notification sent: $status');
-      }
-
-      // Send openUntil change notification (only if open and not during status change to open)
-      if (openUntilChanged &&
-          response.state.open &&
-          openUntil != null &&
-          !statusChangedToOpen &&
-          _getOpenUntilChangedTitle != null &&
-          _getOpenUntilChangedBody != null) {
-        await NotificationService.showStatusChangeNotification(
-          title: _getOpenUntilChangedTitle!(),
-          body: _getOpenUntilChangedBody!(openUntil),
-        );
-        log('OpenUntil change notification sent: $openUntil');
-      }
-
-      // Special openUntil notification when first opening (if time is available)
-      if (statusChangedToOpen &&
-          openUntil != null &&
-          _getOpenUntilChangedTitle != null &&
-          _getOpenUntilChangedBody != null) {
-        await NotificationService.showStatusChangeNotification(
-          title: _getOpenUntilChangedTitle!(),
-          body: _getOpenUntilChangedBody!(openUntil),
-        );
-        log('First openUntil notification when opening sent: $openUntil');
-      }
-
       // Save current status
       _lastResponse = response;
       _lastOpenUntil = openUntil;
@@ -325,6 +289,47 @@ class BackgroundTaskService {
         openUntil: openUntil,
         timestamp: DateTime.now(),
       ));
+
+      // Send status change notification
+      if (statusChanged &&
+          !openUntilChanged &&
+          _getStatusChangedTitle != null &&
+          _getStatusChangedBody != null) {
+        final status = response.state.open ? 'OPEN' : 'CLOSED';
+        await NotificationService.showStatusChangeNotification(
+          title: _getStatusChangedTitle!(),
+          body: _getStatusChangedBody!(status),
+        );
+        log('Status change notification sent: $status');
+      }
+
+      // Send openUntil change notification only if space is open
+      if (openUntilChanged &&
+          !statusChanged &&
+          response.state.open &&
+          openUntil != null &&
+          _getOpenUntilChangedTitle != null &&
+          _getOpenUntilChangedBody != null) {
+        await NotificationService.showStatusChangeNotification(
+          title: _getOpenUntilChangedTitle!(),
+          body: _getOpenUntilChangedBody!(openUntil),
+        );
+        log('OpenUntil change notification sent: $openUntil');
+      }
+      // Send combined status and openUntil change notification
+      if (openUntilChanged &&
+          statusChanged &&
+          response.state.open &&
+          openUntil != null &&
+          _getOpenUntilAndStatusChangedTitle != null &&
+          _getOpenUntilAndStatusChangedBody != null) {
+        final status = response.state.open ? 'OPEN' : 'CLOSED';
+        await NotificationService.showStatusChangeNotification(
+          title: _getOpenUntilAndStatusChangedTitle!(),
+          body: _getOpenUntilAndStatusChangedBody!(openUntil, status),
+        );
+        log('Combined status and openUntil change notification sent: $openUntil, status: $status');
+      }
 
       log('Status check completed: ${response.state.open ? "open" : "closed"}');
     } catch (e) {
@@ -338,11 +343,16 @@ class BackgroundTaskService {
     required String Function(String status) getStatusChangedBody,
     required String Function() getOpenUntilChangedTitle,
     required String Function(String time) getOpenUntilChangedBody,
+    required String Function() getOpenUntilAndStatusChangedTitle,
+    required String Function(String time, String status)
+        getOpenUntilAndStatusChangedBody,
   }) {
     _getStatusChangedTitle = getStatusChangedTitle;
     _getStatusChangedBody = getStatusChangedBody;
     _getOpenUntilChangedTitle = getOpenUntilChangedTitle;
     _getOpenUntilChangedBody = getOpenUntilChangedBody;
+    _getOpenUntilAndStatusChangedTitle = getOpenUntilAndStatusChangedTitle;
+    _getOpenUntilAndStatusChangedBody = getOpenUntilAndStatusChangedBody;
   }
 
   /// Reset internal state (for testing)

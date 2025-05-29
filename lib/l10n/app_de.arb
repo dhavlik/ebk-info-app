@@ -30,6 +30,8 @@
   "ebkStatusChanged": "EBK Status geändert",
   "eigenbaukombinatIsNow": "Das Eigenbaukombinat ist jetzt {status}",
   "ebkOpeningTimeChanged": "EBK Öffnungszeit geändert",
+  "ebkOpenUntilAndStatusChanged": "EBK Status und Öffnungszeit geändert",
+  "openUntilAndStatus": "Geöffnet bis {time} - Status: {status}",
   "allDay": "Ganztägig",
   "today": "Heute",
   "eventDateTimeFormat": "Am {date} von {startTime} bis {endTime}",

@@ -132,6 +132,24 @@
   "@ebkOpeningTimeChanged": {
     "description": "Notification title for opening time change"
   },
+  "ebkOpenUntilAndStatusChanged": "EBK Status and Opening Time Changed",
+  "@ebkOpenUntilAndStatusChanged": {
+    "description": "Notification title for both status and opening time change"
+  },
+  "openUntilAndStatus": "Open until {time} - Status: {status}",
+  "@openUntilAndStatus": {
+    "description": "Notification body for both opening time and status change",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "18:00"
+      },
+      "status": {
+        "type": "String",
+        "example": "OPEN"
+      }
+    }
+  },
   "allDay": "All day",
   "@allDay": {
     "description": "Label for all-day events"

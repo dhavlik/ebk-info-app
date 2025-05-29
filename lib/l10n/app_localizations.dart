@@ -95,7 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('de'),
-    Locale('en'),
+    Locale('en')
   ];
 
   /// The title of the application
@@ -278,6 +278,18 @@ abstract class AppLocalizations {
   /// **'EBK Opening Time Changed'**
   String get ebkOpeningTimeChanged;
 
+  /// Notification title for both status and opening time change
+  ///
+  /// In en, this message translates to:
+  /// **'EBK Status and Opening Time Changed'**
+  String get ebkOpenUntilAndStatusChanged;
+
+  /// Notification body for both opening time and status change
+  ///
+  /// In en, this message translates to:
+  /// **'Open until {time} - Status: {status}'**
+  String openUntilAndStatus(String time, String status);
+
   /// Label for all-day events
   ///
   /// In en, this message translates to:
@@ -366,9 +378,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

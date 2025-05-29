@@ -106,6 +106,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ebkOpeningTimeChanged => 'EBK Öffnungszeit geändert';
 
   @override
+  String get ebkOpenUntilAndStatusChanged =>
+      'EBK Status und Öffnungszeit geändert';
+
+  @override
+  String openUntilAndStatus(String time, String status) {
+    return 'Geöffnet bis $time - Status: $status';
+  }
+
+  @override
   String get allDay => 'Ganztägig';
 
   @override
