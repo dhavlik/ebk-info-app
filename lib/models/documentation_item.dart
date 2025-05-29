@@ -72,6 +72,22 @@ class DocumentationItem {
     );
   }
 
+  factory DocumentationItem.fromIndexHtml({
+    required String id,
+    required String title,
+    required String url,
+    required DocumentationItemType type,
+    List<DocumentationItem> children = const [],
+  }) {
+    return DocumentationItem(
+      id: id,
+      title: title,
+      url: url,
+      type: type,
+      children: children,
+    );
+  }
+
   static bool _isKnownNamespace(String id) {
     const knownNamespaces = {
       'bereiche',

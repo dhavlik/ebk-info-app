@@ -1,86 +1,111 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/documentation_item.dart';
 
 class DocumentationService {
   static const String _baseUrl = 'https://doku.eigenbaukombinat.de';
-  static const String _sitemapEndpoint = '/?do=sitemap';
+  static const String _indexEndpoint = '/doku.php?do=index';
 
   final http.Client _client;
 
   DocumentationService({http.Client? client})
       : _client = client ?? http.Client();
 
-  /// Fetches the main documentation structure from DokuWiki Sitemap
+  /// Fetches the main documentation structure from DokuWiki Index page
   Future<List<DocumentationItem>> getDocumentationStructure() async {
     try {
-      print('Fetching documentation sitemap from: $_baseUrl$_sitemapEndpoint');
+      print('Fetching documentation index from: $_baseUrl$_indexEndpoint');
       final response = await _client.get(
-        Uri.parse('$_baseUrl$_sitemapEndpoint'),
+        Uri.parse('$_baseUrl$_indexEndpoint'),
         headers: {'User-Agent': 'EBK-App/1.0'},
       );
 
-      print('Documentation sitemap response status: ${response.statusCode}');
+      print('Documentation index response status: ${response.statusCode}');
       print(
-          'Documentation sitemap response length: ${response.bodyBytes.length} bytes');
+          'Documentation index response length: ${response.body.length} characters');
 
       if (response.statusCode != 200) {
         throw Exception(
-            'Failed to fetch documentation sitemap: ${response.statusCode}');
+            'Failed to fetch documentation index: ${response.statusCode}');
       }
 
-      // Decompress gzipped content
-      final decompressedBytes = gzip.decode(response.bodyBytes);
-      final xmlContent = utf8.decode(decompressedBytes);
-
-      print('Decompressed XML length: ${xmlContent.length} characters');
-      print(
-          'XML preview: ${xmlContent.substring(0, xmlContent.length > 300 ? 300 : xmlContent.length)}');
-
-      return _parseSitemapXml(xmlContent);
+      return _parseIndexHtml(response.body);
     } catch (e) {
       print('Error fetching documentation structure: $e');
       throw Exception('Error fetching documentation structure: $e');
     }
   }
 
-  /// Parses the DokuWiki XML sitemap into DocumentationItems
-  List<DocumentationItem> _parseSitemapXml(String xmlContent) {
+  /// Parses the DokuWiki HTML index page into DocumentationItems
+  List<DocumentationItem> _parseIndexHtml(String htmlContent) {
     final List<DocumentationItem> items = [];
 
-    print('Parsing XML sitemap with ${xmlContent.length} characters');
+    print('Parsing HTML index with ${htmlContent.length} characters');
 
-    // Extract all URL entries from the XML sitemap
-    final urlRegex = RegExp(
-        r'<loc>(https://doku\.eigenbaukombinat\.de/doku\.php\?id=([^<]+))</loc>');
-    final matches = urlRegex.allMatches(xmlContent);
+    // Extract the main index list
+    final indexListMatch = RegExp(r'<ul class="idx">(.*?)</ul>', dotAll: true)
+        .firstMatch(htmlContent);
 
-    print('Found ${matches.length} documentation pages in sitemap');
+    if (indexListMatch == null) {
+      print('No index list found in HTML');
+      return items;
+    }
 
-    for (final match in matches) {
-      final url = match.group(1)!;
-      final pageId = match.group(2)!;
+    final indexListHtml = indexListMatch.group(1)!;
+    print('Found index list with ${indexListHtml.length} characters');
 
-      print('Processing page: $pageId -> $url');
+    // Parse directories (namespaces) - these have idx_dir class
+    final dirRegex = RegExp(
+        r'<a href="/doku\.php\?id=start&amp;idx=([^"]+)"[^>]*class="idx_dir"[^>]*><strong>([^<]+)</strong></a>',
+        multiLine: true);
 
-      try {
-        final item = DocumentationItem.fromSitemapEntry(
-          pageId: pageId,
-          url: url,
+    final dirMatches = dirRegex.allMatches(indexListHtml);
+    print('Found ${dirMatches.length} directories');
+
+    for (final match in dirMatches) {
+      final namespace = Uri.decodeComponent(match.group(1)!);
+      final title = match.group(2)!;
+
+      print('Processing directory: $namespace -> $title');
+
+      if (_shouldIncludeNamespace(namespace)) {
+        final item = DocumentationItem.fromIndexHtml(
+          id: namespace,
+          title: _formatTitle(title),
+          url: '$_baseUrl/doku.php?id=start&idx=$namespace',
+          type: DocumentationItemType.namespace,
         );
 
-        // Filter out certain items we don't want to show in the app
-        if (_shouldIncludeItem(item)) {
-          items.add(item);
-          print('Added item: ${item.title} (${item.type})');
-        } else {
-          print('Excluded item: ${item.title}');
-        }
-      } catch (e) {
-        // Skip malformed entries
-        print(
-            'Warning: Could not parse documentation entry: $pageId -> $url - Error: $e');
+        items.add(item);
+        print('Added namespace: ${item.title}');
+      }
+    }
+
+    // Parse individual pages - these have wikilink1 class
+    final pageRegex = RegExp(
+        r'<a href="/doku\.php\?id=([^"]+)"[^>]*class="wikilink1"[^>]*data-wiki-id="([^"]+)">([^<]+)</a>',
+        multiLine: true);
+
+    final pageMatches = pageRegex.allMatches(indexListHtml);
+    print('Found ${pageMatches.length} pages');
+
+    for (final match in pageMatches) {
+      final pageId = match.group(1)!;
+      final wikiId = match.group(2)!;
+      final title = match.group(3)!;
+
+      print('Processing page: $pageId -> $title');
+
+      if (_shouldIncludePage(pageId)) {
+        final item = DocumentationItem.fromIndexHtml(
+          id: wikiId,
+          title: title,
+          url: '$_baseUrl/doku.php?id=$pageId',
+          type: DocumentationItemType.page,
+        );
+
+        items.add(item);
+        print('Added page: ${item.title}');
       }
     }
 
@@ -88,29 +113,42 @@ class DocumentationService {
     return _organizeDocumentationItems(items);
   }
 
-  /// Determines if an item should be included in the app
-  bool _shouldIncludeItem(DocumentationItem item) {
+  /// Determines if a namespace should be included in the app
+  bool _shouldIncludeNamespace(String namespace) {
     // Exclude technical/admin sections
-    final excludedIds = [
-      'wiki:welcome', 'wiki:dokuwiki', 'wiki:syntax',
-      'sidebar', 'dell_venue_8_pro', 'templates',
-      'start', // main start page
+    final excludedNamespaces = ['templates', 'wiki'];
+    return !excludedNamespaces.contains(namespace);
+  }
+
+  /// Determines if a page should be included in the app
+  bool _shouldIncludePage(String pageId) {
+    // Exclude technical/admin pages
+    final excludedPages = [
+      'sidebar',
+      'dell_venue_8_pro',
+      'start',
     ];
 
     // Exclude any pages that start with excluded prefixes
     final excludedPrefixes = ['wiki:', 'playground:'];
 
     for (final prefix in excludedPrefixes) {
-      if (item.id.startsWith(prefix)) {
+      if (pageId.startsWith(prefix)) {
         return false;
       }
     }
 
-    if (excludedIds.contains(item.id)) {
-      return false;
-    }
+    return !excludedPages.contains(pageId);
+  }
 
-    return true;
+  /// Formats a title by capitalizing words properly
+  String _formatTitle(String title) {
+    return title
+        .split(' ')
+        .map((word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+            : word)
+        .join(' ');
   }
 
   /// Organizes items by separating namespaces and pages
