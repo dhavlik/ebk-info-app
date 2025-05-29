@@ -172,7 +172,6 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
 
   Widget _buildCategoryCard(DocumentationItem item) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
     final isExpanded = _expandedItems[item.id] ?? false;
     final isLoading = _loadingItems[item.id] ?? false;
 
