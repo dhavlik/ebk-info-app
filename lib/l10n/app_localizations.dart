@@ -152,6 +152,18 @@ abstract class AppLocalizations {
   /// **'Official Website'**
   String get officialWebsite;
 
+  /// Documentation link title
+  ///
+  /// In en, this message translates to:
+  /// **'Documentation'**
+  String get documentation;
+
+  /// Documentation link description
+  ///
+  /// In en, this message translates to:
+  /// **'Information about areas, tools, machines and more'**
+  String get documentationDescription;
+
   /// Phone contact description
   ///
   /// In en, this message translates to:

@@ -9,6 +9,8 @@
   "email": "E-Mail",
   "address": "Adresse",
   "officialWebsite": "Offizielle Website",
+  "documentation": "Dokumentation",
+  "documentationDescription": "Informationen über Bereiche, Werkzeuge, Maschinen und mehr",
   "phoneContact": "Telefon Kontakt",
   "sendEmail": "E-Mail schreiben",
   "officialLinkCollection": "Offizielle Linksammlung",

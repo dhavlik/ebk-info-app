@@ -36,6 +36,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get officialWebsite => 'Offizielle Website';
 
   @override
+  String get documentation => 'Dokumentation';
+
+  @override
+  String get documentationDescription =>
+      'Informationen über Bereiche, Werkzeuge, Maschinen und mehr';
+
+  @override
   String get phoneContact => 'Telefon Kontakt';
 
   @override

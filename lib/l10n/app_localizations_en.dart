@@ -36,6 +36,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get officialWebsite => 'Official Website';
 
   @override
+  String get documentation => 'Documentation';
+
+  @override
+  String get documentationDescription =>
+      'Information about areas, tools, machines and more';
+
+  @override
   String get phoneContact => 'Phone Contact';
 
   @override

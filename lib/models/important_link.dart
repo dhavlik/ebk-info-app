@@ -22,6 +22,12 @@ class ImportantLink {
         description: l10n.officialWebsite,
       ),
       ImportantLink(
+        title: l10n.documentation,
+        url: 'https://doku.eigenbaukombinat.de',
+        icon: '📚',
+        description: l10n.documentationDescription,
+      ),
+      ImportantLink(
         title: l10n.email,
         url: 'mailto:kontakt@eigenbaukombinat.de',
         icon: '✉️',

@@ -36,6 +36,14 @@
   "@officialWebsite": {
     "description": "Official website description"
   },
+  "documentation": "Documentation",
+  "@documentation": {
+    "description": "Documentation link title"
+  },
+  "documentationDescription": "Information about areas, tools, machines and more",
+  "@documentationDescription": {
+    "description": "Documentation link description"
+  },
   "phoneContact": "Phone Contact",
   "@phoneContact": {
     "description": "Phone contact description"
