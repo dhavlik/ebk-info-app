@@ -83,10 +83,6 @@ jobs:
         run: |
           mkdir -p apk-upload
           cp build/app/outputs/flutter-apk/app-release.apk apk-upload/ebk-app-pr-${{ github.event.number }}.apk
-          # Copy the index.html if it exists for a nice landing page
-          if [ -f "docs/index.html" ]; then
-            cp docs/index.html apk-upload/
-          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -137,7 +133,7 @@ jobs:
       pages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Download APK artifact
@@ -154,23 +150,87 @@ jobs:
 
       - name: Prepare combined deployment
         run: |
+          echo "=== Starting deployment preparation ==="
+
+          # Create deployment directories
           mkdir -p deployment/apks/pr-${{ github.event.number }}
           mkdir -p deployment/web/pr-${{ github.event.number }}
 
-          # Copy APK files
-          cp -r apk-artifacts/* deployment/apks/pr-${{ github.event.number }}/
+          echo "=== Checking workspace and artifacts ==="
+          ls -la
+          echo "=== PWD is: $(pwd) ==="
 
-          # Copy Web files
-          cp -r web-artifacts/* deployment/web/pr-${{ github.event.number }}/
+          # Debug APK artifacts
+          if [ -d "apk-artifacts" ]; then
+            echo "APK artifacts directory exists:"
+            find apk-artifacts -type f -exec ls -la {} \;
+            # Copy files individually to avoid issues with empty directories
+            find apk-artifacts -name "*.apk" -exec cp {} deployment/apks/pr-${{ github.event.number }}/ \;
+            echo "APK files copied"
+          else
+            echo "Error: APK artifacts directory not found"
+          fi
 
-          # Copy landing page to root if it exists
+          # Debug Web artifacts
+          if [ -d "web-artifacts" ]; then
+            echo "Web artifacts directory exists:"
+            find web-artifacts -type f | head -20
+            echo "Total web files: $(find web-artifacts -type f | wc -l)"
+            # Copy web files preserving structure
+            if [ "$(find web-artifacts -type f | wc -l)" -gt 0 ]; then
+              cp -r web-artifacts/* deployment/web/pr-${{ github.event.number }}/
+              echo "Web files copied successfully"
+            else
+              echo "Warning: No web files found in artifacts"
+            fi
+          else
+            echo "Error: Web artifacts directory not found"
+          fi
+
+          # Create simple index.html for APK directory with download link
+          echo '<!DOCTYPE html>' > deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '<html lang="en">' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '<head>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <meta charset="UTF-8">' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <title>EBK App - PR ${{ github.event.number }} APK Download</title>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '</head>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '<body>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <h1>EBK App - Pull Request #${{ github.event.number }}</h1>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <h2>Android APK Download</h2>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <p>Download the Android APK for testing:</p>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <p><a href="ebk-app-pr-${{ github.event.number }}.apk" download>📲 Download APK</a></p>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '    <p><strong>Installation:</strong> Enable "Unknown sources" in Android settings, then install the downloaded APK.</p>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '</body>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+          echo '</html>' >> deployment/apks/pr-${{ github.event.number }}/index.html
+
+          # Copy docs landing page to root if it exists
           if [ -f "docs/index.html" ]; then
+            echo "Copying docs/index.html to deployment root"
             cp docs/index.html deployment/
           fi
 
-          # Debug: List the deployment structure
-          echo "=== Deployment structure ==="
+          # Ensure we have something to deploy - create a minimal index if needed
+          if [ ! -f "deployment/index.html" ]; then
+            echo "Creating minimal root index.html"
+            echo '<!DOCTYPE html>' > deployment/index.html
+            echo '<html lang="en">' >> deployment/index.html
+            echo '<head>' >> deployment/index.html
+            echo '    <meta charset="UTF-8">' >> deployment/index.html
+            echo '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> deployment/index.html
+            echo '    <title>EBK App Downloads</title>' >> deployment/index.html
+            echo '</head>' >> deployment/index.html
+            echo '<body>' >> deployment/index.html
+            echo '    <h1>EBK App Downloads</h1>' >> deployment/index.html
+            echo '    <p>Build artifacts for pull requests will appear here.</p>' >> deployment/index.html
+            echo '</body>' >> deployment/index.html
+            echo '</html>' >> deployment/index.html
+          fi
+
+          echo "=== Final deployment structure ==="
           find deployment -type f -exec ls -la {} \;
+          echo "=== Total files in deployment ==="
+          find deployment -type f | wc -l
           echo "============================"
 
       - name: Deploy to GitHub Pages
