@@ -434,39 +434,6 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Welcome section
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          l10n.documentationDescription,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap on a category to view its subcategories as direct links.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-
           // Documentation categories (only show namespaces, not individual pages)
           ..._documentationItems!
               .where((item) => item.isNamespace)
