@@ -1,8 +1,9 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
-import 'services/background_polling_service.dart';
+import 'services/background_task_service.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -11,10 +12,37 @@ void main() async {
   // Benachrichtigungsservice initialisieren
   await NotificationService.initialize();
 
-  // Background-Polling starten
-  BackgroundPollingService.startPolling();
+  // Request background permissions on Android startup
+  await _requestStartupPermissions();
+
+  // Background-Tasks initialisieren (but not start yet - will start in home screen)
+  await BackgroundTaskService.initialize();
 
   runApp(const EBKApp());
+}
+
+/// Request necessary permissions on app startup
+Future<void> _requestStartupPermissions() async {
+  try {
+    // Request notification permissions
+    final notificationStatus =
+        await NotificationService.areNotificationsEnabled();
+    if (!notificationStatus) {
+      log('Requesting notification permissions...');
+      await NotificationService.requestPermissions();
+    }
+
+    // Request background permissions on Android
+    final backgroundPermissions =
+        await BackgroundTaskService.requestBackgroundPermissions();
+    if (backgroundPermissions) {
+      log('Background permissions granted, ready to start background tasks');
+    } else {
+      log('Background permissions denied, background tasks will be limited');
+    }
+  } catch (e) {
+    log('Error during startup permission requests: $e');
+  }
 }
 
 class EBKApp extends StatelessWidget {
@@ -36,12 +64,12 @@ class EBKApp extends StatelessWidget {
       ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.blueGrey.shade800,
           brightness: Brightness.light,
         ),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blue,
+          backgroundColor: Color(0xFF37474F), // blueGrey.shade800
           foregroundColor: Colors.white,
           elevation: 2,
         ),
@@ -52,12 +80,12 @@ class EBKApp extends StatelessWidget {
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.blueGrey.shade800,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.blue.shade800,
+          backgroundColor: Colors.blueGrey.shade800,
           foregroundColor: Colors.white,
           elevation: 2,
         ),

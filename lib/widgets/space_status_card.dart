@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/space_api_service.dart';
-import '../services/background_polling_service.dart';
+import '../services/background_task_service.dart';
 import '../models/space_api_response.dart' as space_api;
 import '../l10n/app_localizations.dart';
 
@@ -33,10 +33,9 @@ class _SpaceStatusCardState extends State<SpaceStatusCard> {
     super.dispose();
   }
 
-  /// Horcht auf Status-Updates vom BackgroundPollingService
+  /// Horcht auf Status-Updates vom BackgroundTaskService
   void _subscribeToStatusUpdates() {
-    _statusSubscription =
-        BackgroundPollingService.statusUpdates.listen((update) {
+    _statusSubscription = BackgroundTaskService.statusUpdates.listen((update) {
       if (mounted) {
         setState(() {
           _spaceData = update.spaceData;
