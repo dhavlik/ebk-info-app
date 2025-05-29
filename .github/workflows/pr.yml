@@ -88,18 +88,20 @@ jobs:
             cp docs/index.html apk-upload/
           fi
 
-      - name: Deploy APK to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: apk-upload
-          destination_dir: apks/pr-${{ github.event.number }}
-          keep_files: true
+          name: apk-build-pr-${{ github.event.number }}
+          path: apk-upload/
+          retention-days: 7
 
   build-web:
     name: Build Web
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: write
+      pages: write
 
     steps:
       - name: Checkout code
@@ -116,25 +118,79 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: flutter build web --release --base-href="/ebk-info-app/"
+        run: flutter build web --release --base-href="/ebk-info-app/web/pr-${{ github.event.number }}/"
 
       - name: Upload Web artifact
         uses: actions/upload-artifact@v4
         with:
-          name: web-build
+          name: web-build-pr-${{ github.event.number }}
           path: build/web/
-          retention-days: 30
+          retention-days: 7
 
-  comment-apk-link:
-    name: Comment APK Download Link
+  deploy-to-pages:
+    name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: build-android
+    needs: [build-android, build-web]
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      pages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-build-pr-${{ github.event.number }}
+          path: apk-artifacts/
+
+      - name: Download Web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build-pr-${{ github.event.number }}
+          path: web-artifacts/
+
+      - name: Prepare combined deployment
+        run: |
+          mkdir -p deployment/apks/pr-${{ github.event.number }}
+          mkdir -p deployment/web/pr-${{ github.event.number }}
+
+          # Copy APK files
+          cp -r apk-artifacts/* deployment/apks/pr-${{ github.event.number }}/
+
+          # Copy Web files
+          cp -r web-artifacts/* deployment/web/pr-${{ github.event.number }}/
+
+          # Copy landing page to root if it exists
+          if [ -f "docs/index.html" ]; then
+            cp docs/index.html deployment/
+          fi
+
+          # Debug: List the deployment structure
+          echo "=== Deployment structure ==="
+          find deployment -type f -exec ls -la {} \;
+          echo "============================"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: deployment
+          keep_files: true
+          force_orphan: false
+
+  comment-build-links:
+    name: Comment Build Links
+    runs-on: ubuntu-latest
+    needs: [deploy-to-pages]
     if: github.event_name == 'pull_request'
     permissions:
       pull-requests: write
 
     steps:
-      - name: Comment on PR with APK download link
+      - name: Comment on PR with build links
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -142,23 +198,40 @@ jobs:
             const prNumber = context.issue.number;
             const repo = context.repo;
 
-            // Construct the GitHub Pages URL for the APK
+            console.log(`Repository: ${repo.owner}/${repo.repo}`);
+            console.log(`PR Number: ${prNumber}`);
+
+            // Construct the GitHub Pages URLs
             const apkUrl = `https://${repo.owner}.github.io/${repo.repo}/apks/pr-${prNumber}/ebk-app-pr-${prNumber}.apk`;
+            const webUrl = `https://${repo.owner}.github.io/${repo.repo}/web/pr-${prNumber}/`;
 
-            const commentBody = `## 📱 Android APK Ready for Testing!
+            console.log(`APK URL: ${apkUrl}`);
+            console.log(`Web URL: ${webUrl}`);
 
-            Your pull request has been built successfully! You can download and test the APK directly:
+            const commentBody = `## 🚀 Build Artifacts Ready for Testing!
 
-            ### 🤖 Direct APK Download
+            Your pull request has been built successfully! You can test the changes in multiple ways:
+
+            ### 📱 Android APK
             **[📲 Download APK](${apkUrl})**
 
-            ### How to install:
+            **Installation steps:**
             1. Click the download link above
             2. Allow downloads from unknown sources in your Android settings
             3. Install the APK file
             4. Test the changes in this PR
 
-            **Note:** This APK will be available as long as the PR exists.
+            ### 🌐 Web App
+            **[🔗 Open Web App](${webUrl})**
+
+            **Testing:**
+            1. Click the link above to open the web version
+            2. Test the changes directly in your browser
+            3. Works on desktop and mobile browsers
+
+            ---
+
+            **Note:** Both builds will be available as long as this PR exists.
 
             _This comment was automatically generated by GitHub Actions._`;
 
@@ -171,7 +244,7 @@ jobs:
 
             const existingComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              comment.body.includes('Android APK Ready for Testing!')
+              comment.body.includes('Build Artifacts Ready for Testing!')
             );
 
             if (existingComment) {
@@ -182,7 +255,7 @@ jobs:
                 comment_id: existingComment.id,
                 body: commentBody
               });
-              console.log('✅ Updated existing APK download comment');
+              console.log('✅ Updated existing build links comment');
             } else {
               // Create new comment
               await github.rest.issues.createComment({
@@ -191,5 +264,5 @@ jobs:
                 issue_number: prNumber,
                 body: commentBody
               });
-              console.log('✅ Posted new APK download comment');
+              console.log('✅ Posted new build links comment');
             }
