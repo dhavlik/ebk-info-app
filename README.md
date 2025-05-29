@@ -119,65 +119,33 @@ This entire Flutter application was **created through AI-assisted development** 
 
 A functional Flutter application that successfully demonstrates AI-assisted development capabilities. While the app includes real-time features, internationalization, and testing, it represents an experimental approach to collaborative human-AI programming rather than a traditional development process.
 
-## 🚀 CI/CD Pipeline
+## Development information
 
-This project includes a comprehensive GitHub Actions pipeline for automated testing, building, and deployment:
+### 🛠️ Setup Development Environment
 
-### 🔄 Automated Workflows
+**Prerequisites:**
+- **Flutter SDK** - Install from [flutter.dev](https://docs.flutter.dev/get-started/install)
+- **Android SDK** - Required for Android builds (via Android Studio or command line tools)
+- **Git** - Version control and pre-commit hooks
 
-**Main CI/CD Pipeline** (`.github/workflows/ci.yml`)
-- **Testing**: Automated test suite with coverage reporting
-- **Code Quality**: Dart formatting and static analysis checks
-- **Multi-Platform Builds**: Android APK, iOS app, and Web builds
-- **Security Scanning**: Dependency vulnerability checks
-- **GitHub Pages**: Automatic web deployment on main branch
+**Essential Commands:**
+```bash
+# Check code quality and lint issues
+flutter analyze
 
-**Pull Request Validation** (`.github/workflows/pr.yml`)
-- Quick formatting and analysis checks
-- Basic build verification
-- Prevents broken code from entering main branch
+# Run all tests (unit + E2E)
+flutter test
 
-**Release Automation** (`.github/workflows/release.yml`)
-- Triggered by version tags (e.g., `v1.0.0`)
-- Builds production APK and App Bundle for Android
-- Creates iOS build archive
-- Uploads release assets automatically
-- Generates release notes
+# Build for web/Android
+flutter build web
+flutter build apk
+```
 
-**Nightly Builds** (`.github/workflows/nightly.yml`)
-- Runs comprehensive tests every night
-- Checks for dependency updates
-- Early detection of integration issues
-
-### 🤖 Dependency Management
-
-**Dependabot** (`.github/dependabot.yml`)
-- Automatically updates Flutter/Dart dependencies weekly
-- Updates GitHub Actions to latest versions
-- Creates pull requests for security updates
-
-### 📋 Issue & PR Templates
-
-**Bug Reports** - Structured template with:
-- Platform and version information
-- Steps to reproduce
-- Device details and logs
-
-**Feature Requests** - Template including:
-- Problem description
-- Proposed solution
-- Priority and platform targeting
-
-**Pull Request Template** - Checklist for:
-- Code quality verification
-- Testing requirements
-- Platform compatibility
-
-### 🛡️ Security
-
-- **Security Policy** (`SECURITY.md`) with vulnerability reporting process
-- Automated security scanning in CI pipeline
-- Dependency vulnerability monitoring
+**Pre-commit Setup:**
+```bash
+# Install pre-commit hooks for code quality
+./scripts/setup-precommit.sh
+```
 
 ### 🏷️ Creating Releases
 
@@ -188,20 +156,3 @@ To create a new release:
 git tag v1.0.0
 git push origin v1.0.0
 ```
-
-This automatically:
-1. Triggers the release workflow
-2. Builds Android APK and App Bundle
-3. Creates iOS build archive  
-4. Uploads assets to GitHub release
-5. Generates release notes
-
-### 📊 Build Status
-
-Current build status can be monitored via the badges at the top of this README. All workflows include:
-
-- ✅ **Automated testing** with Flutter test suite
-- ✅ **Code quality checks** with dart analyze
-- ✅ **Multi-platform builds** (Android, iOS, Web)
-- ✅ **Security scanning** for vulnerabilities
-- ✅ **Dependency monitoring** with Dependabot
