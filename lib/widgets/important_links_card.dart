@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/important_link.dart';
+import '../screens/documentation_screen.dart';
 import '../l10n/app_localizations.dart';
 
 class ImportantLinksCard extends StatelessWidget {
   const ImportantLinksCard({super.key});
+
+  Future<void> _handleLinkTap(BuildContext context, ImportantLink link) async {
+    // Handle documentation links specially - open in app
+    if (link.url.contains('doku.eigenbaukombinat.de')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const DocumentationScreen(),
+        ),
+      );
+      return;
+    }
+
+    // Handle other links - open externally
+    await _launchUrl(link.url);
+  }
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
@@ -43,7 +59,7 @@ class ImportantLinksCard extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: InkWell(
-                  onTap: () => _launchUrl(link.url),
+                  onTap: () => _handleLinkTap(context, link),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.all(12),

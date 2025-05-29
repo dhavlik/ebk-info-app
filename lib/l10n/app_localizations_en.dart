@@ -151,4 +151,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get couldNotAddToCalendar => 'Could not add to calendar';
+
+  @override
+  String get documentation => 'Documentation';
+
+  @override
+  String get documentationDescription =>
+      'Information about areas, tools, machines and more';
+
+  @override
+  String get errorLoadingData => 'Error Loading Data';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get errorOpeningLink => 'Could not open link';
 }

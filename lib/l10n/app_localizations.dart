@@ -95,7 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('de'),
-    Locale('en'),
+    Locale('en')
   ];
 
   /// The title of the application
@@ -355,6 +355,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not add to calendar'**
   String get couldNotAddToCalendar;
+
+  /// Documentation link title
+  ///
+  /// In en, this message translates to:
+  /// **'Documentation'**
+  String get documentation;
+
+  /// Documentation link description
+  ///
+  /// In en, this message translates to:
+  /// **'Information about areas, tools, machines and more'**
+  String get documentationDescription;
+
+  /// Error message when data fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Error Loading Data'**
+  String get errorLoadingData;
+
+  /// Retry button text
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// Error message when link cannot be opened
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link'**
+  String get errorOpeningLink;
 }
 
 class _AppLocalizationsDelegate
@@ -384,9 +414,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
