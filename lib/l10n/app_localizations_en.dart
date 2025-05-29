@@ -57,6 +57,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closed => 'Closed';
 
   @override
+  String get openUntilLabel => 'Open until';
+
+  @override
   String openUntil(String time) {
     return 'Open until: $time';
   }
@@ -103,6 +106,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ebkOpeningTimeChanged => 'EBK Opening Time Changed';
+
+  @override
+  String get ebkOpenUntilAndStatusChanged =>
+      'EBK Status and Opening Time Changed';
+
+  @override
+  String openUntilAndStatus(String time, String status) {
+    return 'Open until $time - Status: $status';
+  }
 
   @override
   String get allDay => 'All day';

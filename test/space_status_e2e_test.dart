@@ -194,7 +194,8 @@ void main() {
       expect(find.byIcon(Icons.lock_open), findsOneWidget);
 
       // Verify "open until" text is shown with the time
-      expect(find.text('Open until 18:30'), findsOneWidget);
+      expect(find.textContaining('Open until'), findsOneWidget);
+      expect(find.textContaining('18:30'), findsOneWidget);
       expect(find.byIcon(Icons.schedule), findsOneWidget);
     });
 
@@ -431,7 +432,7 @@ class _TestSpaceStatusCardState extends State<TestSpaceStatusCard> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Open until ${_openUntilData!.closeTime}',
+                  '${AppLocalizations.of(context)!.openUntilLabel} ${_openUntilData!.closeTime}',
                   style: TextStyle(
                     fontSize: 14,
                     color: statusColor.shade700,

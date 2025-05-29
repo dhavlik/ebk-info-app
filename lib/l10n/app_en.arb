@@ -64,6 +64,10 @@
   "@closed": {
     "description": "Space is closed status"
   },
+  "openUntilLabel": "Open until",
+  "@openUntilLabel": {
+    "description": "Label text for open until time display"
+  },
   "openUntil": "Open until: {time}",
   "@openUntil": {
     "description": "Space is open until specific time",
@@ -131,6 +135,24 @@
   "ebkOpeningTimeChanged": "EBK Opening Time Changed",
   "@ebkOpeningTimeChanged": {
     "description": "Notification title for opening time change"
+  },
+  "ebkOpenUntilAndStatusChanged": "EBK Status and Opening Time Changed",
+  "@ebkOpenUntilAndStatusChanged": {
+    "description": "Notification title for both status and opening time change"
+  },
+  "openUntilAndStatus": "Open until {time} - Status: {status}",
+  "@openUntilAndStatus": {
+    "description": "Notification body for both opening time and status change",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "18:00"
+      },
+      "status": {
+        "type": "String",
+        "example": "OPEN"
+      }
+    }
   },
   "allDay": "All day",
   "@allDay": {

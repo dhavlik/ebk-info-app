@@ -58,6 +58,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get closed => 'geschlossen';
 
   @override
+  String get openUntilLabel => 'Geöffnet bis';
+
+  @override
   String openUntil(String time) {
     return 'Geöffnet bis: $time';
   }
@@ -104,6 +107,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get ebkOpeningTimeChanged => 'EBK Öffnungszeit geändert';
+
+  @override
+  String get ebkOpenUntilAndStatusChanged =>
+      'EBK Status und Öffnungszeit geändert';
+
+  @override
+  String openUntilAndStatus(String time, String status) {
+    return 'Geöffnet bis $time - Status: $status';
+  }
 
   @override
   String get allDay => 'Ganztägig';
