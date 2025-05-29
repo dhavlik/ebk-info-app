@@ -82,6 +82,30 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
     }
   }
 
+  Future<void> _openExternalUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.errorOpeningLink),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.errorOpeningLink),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _toggleNamespace(DocumentationItem item) async {
     if (!item.isNamespace) return;
 
@@ -354,6 +378,15 @@ class _DocumentationScreenState extends State<DocumentationScreen> {
             controller: WebViewController()
               ..setJavaScriptMode(JavaScriptMode.unrestricted)
               ..setBackgroundColor(theme.colorScheme.surface)
+              ..setNavigationDelegate(
+                NavigationDelegate(
+                  onNavigationRequest: (NavigationRequest request) {
+                    // Intercept all navigation requests and open them in external browser
+                    _openExternalUrl(request.url);
+                    return NavigationDecision.prevent;
+                  },
+                ),
+              )
               ..loadHtmlString(pageContent),
           ),
         ),
